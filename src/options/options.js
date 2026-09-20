@@ -215,7 +215,9 @@ function buildSiteDetail(rule) {
     </div>`;
   const rows = [
     behaviorRow(t('rowHeartbeat'), t('rowHeartbeatHint'), switchHtml(b.heartbeat !== false, 'heartbeat')),
-    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    // max comes from LIMITS.heartbeatIntervalSec.max (shared/constants.js);
+    // keep in sync — the bounds-drift test reads this HTML and asserts equality.
+    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="${LIMITS.heartbeatIntervalSec.max}" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
     behaviorRow(t('rowActivity'), t('rowActivityHint'), switchHtml(b.activity !== false, 'activity')),
     behaviorRow(t('rowAntiDiscard'), t('rowAntiDiscardHint'), switchHtml(b.antiDiscard !== false, 'antiDiscard')),
     behaviorRow(t('rowAutoReload'), t('rowAutoReloadHint'), switchHtml(b.autoReload !== false, 'autoReload')),
