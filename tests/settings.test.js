@@ -89,6 +89,40 @@ test('normalizeSettings keeps structured log entries (i18n key + params) and leg
   assert.deepEqual(s.log[3].params.length, 10, 'params capped at 10');
 });
 
+test('normalizeSettings validates per-rule stats', () => {
+  const s = normalizeSettings({
+    stats: {
+      'https://app.example.com/': {
+        heartbeats: 41.9,
+        recoveries: -3,
+        lastHeartbeatAt: 1234,
+        lastDisconnectAt: 'nope',
+        lastRecoverAt: 5678,
+        bogus: true,
+      },
+      '*.com': { heartbeats: 99 },
+      'not a rule': { heartbeats: 1 },
+    },
+  });
+  assert.deepEqual(Object.keys(s.stats), ['app.example.com']);
+  const st = s.stats['app.example.com'];
+  assert.equal(st.heartbeats, 41, 'counters truncated to integers');
+  assert.equal(st.recoveries, 0, 'negative counters floored to 0');
+  assert.equal(st.lastHeartbeatAt, 1234);
+  assert.equal(st.lastDisconnectAt, 0, 'bad timestamps become 0 (unset)');
+  assert.equal(st.lastRecoverAt, 5678);
+  assert.equal('bogus' in st, false);
+  // missing stats → empty map, defaults intact
+  assert.deepEqual(normalizeSettings({}).stats, {});
+});
+
+test('normalizeSettings caps the stats map', () => {
+  const stats = {};
+  for (let i = 0; i < LIMITS.maxManagedTabs + 50; i++) stats[`site${i}.example.com`] = { heartbeats: 1 };
+  const s = normalizeSettings({ stats });
+  assert.equal(Object.keys(s.stats).length, LIMITS.maxManagedTabs);
+});
+
 test('memoryStorage stores and removes', async () => {
   const storage = memoryStorage();
   await storage.set({ a: 1, b: 2 });

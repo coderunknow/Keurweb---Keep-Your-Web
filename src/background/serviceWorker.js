@@ -25,6 +25,18 @@ const ERROR_PAGE_URL = 'chrome-error://chromewebdata/';
 const store = new SettingsStore(chrome.storage.local);
 const engine = new KeepAliveEngine();
 
+/**
+ * Persists the stat counters the engine mutated on a settings tree.
+ * Stats live in chrome.storage.local (durable + exportable), unlike tab
+ * state which only needs storage.session.
+ */
+async function persistStats(settings) {
+  await store.update((s) => {
+    s.stats = settings.stats;
+    return s;
+  });
+}
+
 /** tabId -> {state, title} for the active-tab badge. */
 const badgeState = new Map();
 /** tabId -> consecutive heartbeat failures. */
@@ -205,8 +217,9 @@ async function considerTab(tabId, url, status) {
   // Tab finished loading after a recovery reload?
   if (status === 'complete' && recoveringTabs.has(tabId)) {
     recoveringTabs.delete(tabId);
-    const intents = engine.noteRecovered(tabId);
+    const intents = engine.noteRecovered(tabId, settings);
     await runIntents(intents);
+    if (settings.stats) await persistStats(settings);
     await injectIntoTab(tabId);
     return;
   }
@@ -343,6 +356,7 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const intents = engine.reportDisconnect(tabId, settings, message.detail ?? {});
       await runIntents(intents);
+      if (intents.some((i) => i.kind === 'reload')) await persistStats(settings);
       return {};
     }
 
@@ -350,8 +364,9 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const tab = await activeTabContext();
       if (tab?.id && tab.url && shouldProtect(settings, tab.url)) {
-        const { behavior } = resolveBehavior(settings, tab.url);
-        void performHeartbeat(tab.id, tab.url, behavior.heartbeatMethod.toUpperCase());
+        const intents = engine.pingNow(tab.id, settings, tab.url);
+        await runIntents(intents);
+        if (intents.length) await persistStats(settings);
         await sendToTab(tab.id, { cmd: 'keurweb-simulate', mode: 'both' });
       }
       return {};
@@ -442,8 +457,10 @@ chrome.commands?.onCommand.addListener(async (command) => {
 
 async function runTick() {
   const settings = await store.load();
+  const statsBefore = JSON.stringify(settings.stats);
   const intents = engine.tick(settings);
   await runIntents(intents);
+  if (JSON.stringify(settings.stats) !== statsBefore) await persistStats(settings);
   persistSession();
 }
 

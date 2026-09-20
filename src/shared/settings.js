@@ -27,6 +27,16 @@ function clampNum(value, { min, max }, fallback) {
   return Math.min(max, Math.max(min, n));
 }
 
+function nonNegInt(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : 0;
+}
+
+function nonNegNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
 /**
  * Coerces an arbitrary object into a valid behavior object.
  * Unknown keys are dropped; values are range-checked and defaulted.
@@ -87,6 +97,23 @@ export function normalizeSettings(raw) {
       if (!rule) continue;
       settings.sites[rule] = normalizeBehavior(value);
       settings.sites[rule].enabled = value?.enabled === true;
+    }
+  }
+
+  if (src.stats && typeof src.stats === 'object' && !Array.isArray(src.stats)) {
+    let count = 0;
+    for (const [key, value] of Object.entries(src.stats)) {
+      const rule = normalizeSiteRule(key);
+      if (!rule || !(value && typeof value === 'object')) continue;
+      if (count >= LIMITS.maxManagedTabs) break; // bound the map
+      settings.stats[rule] = {
+        heartbeats: nonNegInt(value.heartbeats),
+        recoveries: nonNegInt(value.recoveries),
+        lastHeartbeatAt: nonNegNum(value.lastHeartbeatAt),
+        lastDisconnectAt: nonNegNum(value.lastDisconnectAt),
+        lastRecoverAt: nonNegNum(value.lastRecoverAt),
+      };
+      count += 1;
     }
   }
 

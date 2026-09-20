@@ -14,7 +14,7 @@ import {
   normalizeSiteRule,
 } from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
-import { applyI18n, t } from '../ui/i18n.js';
+import { applyI18n, fmtNum, t } from '../ui/i18n.js';
 
 applyI18n();
 document.title = t('pageTitle');
@@ -195,6 +195,24 @@ function buildSiteDetail(rule) {
   const b = { ...settings.defaults, ...site };
   const usingDefaults = ALL_BEHAVIOR_KEYS.every((k) => !(k in site));
   const interval = b.heartbeatIntervalSec ?? 60;
+  const stats = settings.stats?.[rule];
+  const hasStats =
+    stats && (stats.heartbeats > 0 || stats.recoveries > 0 || stats.lastDisconnectAt > 0 || stats.lastRecoverAt > 0);
+  const fmtTs = (ts) => (ts ? new Date(ts).toLocaleString() : '—');
+  const statsHtml = `
+    <div class="kw-stats">
+      <span class="kw-label">${t('statsLabel')}</span>
+      <span>${
+        hasStats
+          ? t('statsNoLast', fmtNum(stats.heartbeats), fmtNum(stats.recoveries))
+          : t('statsEmpty')
+      }</span>
+      <span>${t('lastDisconnect', fmtTs(stats?.lastDisconnectAt))}</span>
+      <span>${t('lastRecover', fmtTs(stats?.lastRecoverAt))}</span>
+      <div class="kw-btn-row">
+        <button class="btn-ghost" data-reset-stats>${t('resetStatsBtn')}</button>
+      </div>
+    </div>`;
   const rows = [
     behaviorRow(t('rowHeartbeat'), t('rowHeartbeatHint'), switchHtml(b.heartbeat !== false, 'heartbeat')),
     behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
@@ -209,6 +227,7 @@ function buildSiteDetail(rule) {
   wrap.innerHTML = `
     ${usingDefaults ? `<p class="kw-site-using-default">${t('usingDefaults')}</p>` : ''}
     ${rows}
+    ${statsHtml}
     <div class="kw-btn-row">
       <button class="btn-ghost" data-reset-site>${t('resetSiteBtn')}</button>
     </div>`;
@@ -295,6 +314,7 @@ function renderSites() {
       if (!confirm(t('removeConfirm', rule))) return;
       await persist((s) => {
         delete s.sites[rule];
+        delete s.stats[rule];
         return s;
       });
       toast(t('removed', rule));
@@ -329,6 +349,19 @@ function bindSiteDetailEvents() {
         if (hint) hint.textContent = t('everySec', value);
       }
       toast(t('saved'));
+    });
+  }
+
+  for (const btn of els.siteList.querySelectorAll('[data-reset-stats]')) {
+    const rule = btn.closest('[data-detail]')?.dataset.detail;
+    if (!rule) continue;
+    btn.addEventListener('click', async () => {
+      await persist((s) => {
+        delete s.stats[rule];
+        return s;
+      });
+      toast(t('statsReset'));
+      renderSites();
     });
   }
 

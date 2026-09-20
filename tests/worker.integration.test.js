@@ -232,6 +232,22 @@ test('disconnect report schedules a backoff reload; completion recovers the tab'
   }
 });
 
+test('heartbeat stats persist to storage.local and appear in the snapshot', async () => {
+  const { log } = await send({ type: 'getLog' });
+  assert.ok(Array.isArray(log));
+
+  const { settings } = await env.chrome.storage.local.get(['settings']);
+  const st = settings.stats['app.example.com'];
+  assert.ok(st, 'stats recorded under the exact host rule');
+  assert.ok(st.heartbeats >= 1, 'at least one heartbeat counted');
+  assert.ok(st.lastHeartbeatAt > 0);
+  assert.ok(st.lastDisconnectAt > 0, 'the earlier disconnect was recorded');
+  assert.ok(st.recoveries >= 1, 'the completed recovery was counted');
+
+  const state = await send({ type: 'getState' });
+  assert.equal(state.snapshot.stats.heartbeats, st.heartbeats, 'snapshot exposes the same counters');
+});
+
 test('activity log entries are structured (i18n key + params) end-to-end', async () => {
   const { log } = await send({ type: 'getLog' });
   assert.ok(Array.isArray(log) && log.length > 0, 'log has entries');

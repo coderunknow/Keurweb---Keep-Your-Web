@@ -72,8 +72,10 @@ test('defaultSettings is complete and fresh per call', () => {
   assert.deepEqual(a.recovery, { backoffBaseSec: 5, budgetMin: 30 });
   a.defaults.heartbeatIntervalSec = 999;
   a.sites['x.example.com'] = { enabled: true };
+  a.stats['x.example.com'] = { heartbeats: 1 };
   assert.equal(b.defaults.heartbeatIntervalSec, 60, 'mutating one copy must not leak into another');
   assert.equal(Object.keys(b.sites).length, 0);
+  assert.deepEqual(b.stats, {}, 'stats map is fresh per call');
 });
 
 test('DEFAULT_SITE_BEHAVIOR covers every switchable key', () => {

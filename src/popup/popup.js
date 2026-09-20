@@ -4,7 +4,7 @@
  */
 
 import { MSG } from '../shared/constants.js';
-import { applyI18n, t } from '../ui/i18n.js';
+import { applyI18n, fmtNum, relativeTime, t } from '../ui/i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -121,6 +121,17 @@ function render() {
     const next = nextHeartbeatSeconds();
     els.statusLine.textContent =
       next == null ? t('statusHeartbeatActive') : t('statusNextHeartbeat', fmtCountdown(next));
+  }
+
+  // Per-site counters (heartbeats sent, reconnects performed, last ping).
+  const stats = snap.stats;
+  if (on && stats && (stats.heartbeats > 0 || stats.recoveries > 0)) {
+    els.statsLine.hidden = false;
+    els.statsLine.textContent = stats.lastHeartbeatAt
+      ? t('statsWithLast', fmtNum(stats.heartbeats), fmtNum(stats.recoveries), relativeTime(stats.lastHeartbeatAt))
+      : t('statsNoLast', fmtNum(stats.heartbeats), fmtNum(stats.recoveries));
+  } else {
+    els.statsLine.hidden = true;
   }
 
   // per-site controls reflect effective behavior

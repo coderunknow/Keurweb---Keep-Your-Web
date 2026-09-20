@@ -61,8 +61,14 @@ export function defaultSettings() {
   return {
     masterEnabled: true,
     defaults: { ...DEFAULT_SITE_BEHAVIOR },
-    /** Per-site overrides keyed by normalized origin (e.g. "app.example.com"). */
+    /** Per-site overrides keyed by site rule (exact host or "*.host" wildcard). */
     sites: {},
+    /**
+     * Per-rule counters, e.g.
+     * { "app.example.com": { heartbeats, recoveries, lastHeartbeatAt,
+     *   lastDisconnectAt, lastRecoverAt } }. 0 = never happened.
+     */
+    stats: {},
     /** Recovery tuning shared by all sites. */
     recovery: {
       backoffBaseSec: 5,
