@@ -3,6 +3,24 @@
 All notable changes to Keurweb are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] — 2026-09-20
+
+### Added
+
+- **Quiet hours** — pause all protection on a daily schedule. Configure a start/end time (HH:MM local, overnight windows valid) in the General settings. While quiet, the engine emits no heartbeat, activity, sweep, or reload intents; disconnect stats are still recorded but no reload is scheduled; manual "Refresh now" from the popup still fires (explicit user action beats schedule). Badges are not repainted en masse during quiet hours. Pure `isQuietHours` helper in `policy.js` with tests for midnight wrap-around, disabled, and boundary minutes.
+- **Per-site heartbeat method** — the existing `heartbeatMethod` behavior key (HEAD/GET) is now editable per site in the options detail panel, not just as a global default.
+- **Standby badge state** — on recovery-budget surrender the worker now shows an amber "STBY" badge (instead of grey "OFF") to make clear the site is still enabled; recovery is just cooling down for 5 minutes. Cleared on recovery or cooldown expiry.
+
+### Changed
+
+- **Heartbeat interval bounds** — all UI sliders (popup, options General, options per-site) now match `LIMITS.heartbeatIntervalSec` (15–3600s) instead of the previous drift (popup capped at 600, options at 1800). A UI-consistency test reads the HTML/JS sources and asserts the bounds equal `LIMITS` so drift fails CI forever.
+- **Activity quiet-gate constant** — replaced the unused `LIMITS.activityIntervalSec` entry with an honestly-named `ACTIVITY_QUIET_MS = 10_000` constant used by the engine. The underlying behavior (simulate only when the page has been quiet for 10s) is unchanged.
+
+### Fixed
+
+- **No version-sync test** — added a `node:test` asserting `package.json` version === `manifest.json` version === `APP_VERSION` === the newest `## [X.Y.Z]` heading in `CHANGELOG.md`. This test is the release companion.
+- **README roadmap** — updated to reflect shipped features (wildcards shipped in v1.1.0 removed from roadmap; quiet hours, per-site method, and standby badge marked as shipped in v1.2.0).
+
 ## [1.1.0] — 2026-09-20
 
 ### Added
