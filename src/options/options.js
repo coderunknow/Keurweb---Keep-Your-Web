@@ -514,9 +514,12 @@ async function hydrate() {
   settings = await store.load();
   els.master.checked = settings.masterEnabled;
   syncBehaviorControls();
-  bindBehaviorControls();
   renderSites();
 }
+
+// One-shot: hydrate() also runs after import/reset, so binding inside it
+// would duplicate every General-form listener.
+bindBehaviorControls();
 
 els.version.textContent = t('aboutVersion', chrome.runtime.getManifest().version);
 
@@ -532,7 +535,9 @@ hydrate().then(() => {
       expandedSites.add(rule);
       show('sites');
       renderSites();
-      $(`[data-host-card="${CSS.escape(rule)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      document
+        .querySelector(`[data-host-card="${CSS.escape(rule)}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } else if (rule) {
       els.addInput.value = rule;
       show('sites');

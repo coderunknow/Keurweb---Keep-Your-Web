@@ -37,6 +37,17 @@ async function persistStats(settings) {
   });
 }
 
+/**
+ * Runs reportDisconnect and persists stats when a reload was scheduled
+ * (that's the only path that mutates lastDisconnectAt).
+ */
+async function disconnectAndPersist(tabId, settings, detail) {
+  const intents = engine.reportDisconnect(tabId, settings, detail);
+  await runIntents(intents);
+  if (intents.some((i) => i.kind === 'reload')) await persistStats(settings);
+  return intents;
+}
+
 /** tabId -> {state, title} for the active-tab badge. */
 const badgeState = new Map();
 /** tabId -> consecutive heartbeat failures. */
@@ -162,8 +173,7 @@ async function performHeartbeat(tabId, url, method = 'HEAD') {
     if (fails >= HEARTBEAT_FAILS_BEFORE_RELOAD) {
       heartbeatFails.delete(tabId);
       const settings = await store.load();
-      const intents = engine.reportDisconnect(tabId, settings, { kind: 'heartbeat' });
-      await runIntents(intents);
+      await disconnectAndPersist(tabId, settings, { kind: 'heartbeat' });
     }
   }
 }
@@ -177,7 +187,12 @@ function scheduleReload(tabId, delayMs) {
     pendingReloads.delete(tabId);
     try {
       const tab = await chrome.tabs.get(tabId);
-      if (!tab.discarded && tab.url && tab.url.startsWith('http')) {
+      const url = tab.url || '';
+      // chrome-error:// pages must be reloadable — that's how a failed
+      // navigation is retried. Discarded tabs are skipped (the anti-discard
+      // sweep handles those separately).
+      const reloadable = url.startsWith('http') || url.startsWith('chrome-error:');
+      if (!tab.discarded && reloadable) {
         recoveringTabs.add(tabId);
         await chrome.tabs.reload(tabId);
       }
@@ -207,6 +222,14 @@ async function injectIntoTab(tabId) {
 
 async function considerTab(tabId, url, status) {
   const settings = await store.load();
+
+  // Chrome's error page is not http(s), so this must run before the
+  // protocol gate — otherwise failed loads are untracked and never recovered.
+  if (url === ERROR_PAGE_URL) {
+    await disconnectAndPersist(tabId, settings, { kind: 'error-page' });
+    return;
+  }
+
   if (!url || !/^https?:/i.test(url)) {
     if (engine.getTab(tabId)) engine.untrackTab(tabId);
     return;
@@ -221,13 +244,6 @@ async function considerTab(tabId, url, status) {
     await runIntents(intents);
     if (settings.stats) await persistStats(settings);
     await injectIntoTab(tabId);
-    return;
-  }
-
-  // Chrome network error page → treat as disconnect.
-  if (url === ERROR_PAGE_URL) {
-    const intents = engine.reportDisconnect(tabId, settings, { kind: 'error-page' });
-    await runIntents(intents);
     return;
   }
 
@@ -354,9 +370,7 @@ async function handleMessage(message, sender = {}) {
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) return {};
       const settings = await store.load();
-      const intents = engine.reportDisconnect(tabId, settings, message.detail ?? {});
-      await runIntents(intents);
-      if (intents.some((i) => i.kind === 'reload')) await persistStats(settings);
+      await disconnectAndPersist(tabId, settings, message.detail ?? {});
       return {};
     }
 

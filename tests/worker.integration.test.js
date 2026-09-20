@@ -296,6 +296,31 @@ test('import rejects corrupt payloads without breaking state', async () => {
   assert.equal(state.masterEnabled, true, 'settings untouched after failed imports');
 });
 
+test('chrome-error page triggers recovery and persists lastDisconnectAt', async () => {
+  mock.timers.enable({ apis: ['setTimeout'] });
+  try {
+    const { settings: before } = await env.chrome.storage.local.get(['settings']);
+    const prev = before.stats['app.example.com']?.lastDisconnectAt ?? 0;
+    const reloadsBefore = env.calls.reloads.length;
+    const errorTab = { id: 7, url: 'chrome-error://chromewebdata/' };
+    env.setActiveTab(errorTab);
+    await fireTabUpdate(errorTab, { status: 'complete', url: errorTab.url });
+
+    const { settings: after } = await env.chrome.storage.local.get(['settings']);
+    assert.ok(
+      after.stats['app.example.com'].lastDisconnectAt > prev,
+      'error-page disconnect must persist lastDisconnectAt',
+    );
+
+    mock.timers.tick(5_000);
+    await drain();
+    assert.equal(env.calls.reloads.length, reloadsBefore + 1, 'error page was reloaded');
+  } finally {
+    mock.timers.reset();
+    env.setActiveTab(TAB);
+  }
+});
+
 test('closing the tab untracks it; unknown message types error cleanly', async () => {
   for (const fn of env.listeners.tabsRemoved) {
     fn(7);

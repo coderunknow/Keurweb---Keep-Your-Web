@@ -24,6 +24,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and 
 - Per-site customization in the options dashboard was broken (the detail panel builder was missing, so “Customize” threw). Fixed and covered by tests.
 - The heartbeat **Request method** setting (HEAD/GET) was ignored — the worker always sent HEAD. Ping intents now carry the configured method.
 - The General form did not re-sync after import/reset (`syncBehaviorControls` was never called).
+- Chrome error pages (`chrome-error://`) never triggered auto-reconnect: the worker untracked the tab before the error-page handler ran, and even a queued reload refused non-http URLs. Failed loads now schedule a retry and persist the disconnect.
+- Heartbeat-failure reconnects did not persist `lastDisconnectAt` (the tick wrote stats, then the async fetch failure mutated a different in-memory copy). All disconnect paths now share one persist helper.
+- Importing or resetting settings re-bound every General-form listener, so later changes double-fired. Bindings are one-shot.
+- Deep-linking from the popup to a site card (Advanced) never scrolled to it (`getElementById` was used with a CSS selector).
 
 ## [1.0.0] — 2026-09-20
 
