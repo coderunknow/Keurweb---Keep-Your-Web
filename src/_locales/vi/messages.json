@@ -182,6 +182,8 @@
   "usingDefaults": { "message": "Đang dùng mặc định toàn cục — tùy chỉnh bên dưới.", "description": "Website: chú thích khi chưa có giá trị riêng." },
   "rowHeartbeat": { "message": "Nhịp tim phiên", "description": "Chi tiết website: dòng nhịp tim." },
   "rowHeartbeatHint": { "message": "Ping làm ấm để giữ phiên sống", "description": "Chi tiết website: chú thích nhịp tim." },
+  "rowMethod": { "message": "Phương thức yêu cầu", "description": "Chi tiết website: dòng chọn phương thức." },
+  "rowMethodHint": { "message": "HEAD nhẹ hơn; GET hoạt động trên nhiều máy chủ hơn.", "description": "Chi tiết website: chú thích phương thức." },
   "rowInterval": { "message": "Khoảng cách nhịp tim", "description": "Chi tiết website: dòng khoảng cách." },
   "rowActivity": { "message": "Chống nhàn rỗi", "description": "Chi tiết website: dòng chống nhàn rỗi." },
   "rowActivityHint": { "message": "Hoạt động người dùng mô phỏng", "description": "Chi tiết website: chú thích chống nhàn rỗi." },

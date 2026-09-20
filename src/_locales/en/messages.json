@@ -182,6 +182,8 @@
   "usingDefaults": { "message": "Using global defaults — customize below.", "description": "Sites: note when a site has no overrides." },
   "rowHeartbeat": { "message": "Session heartbeat", "description": "Site detail: heartbeat row." },
   "rowHeartbeatHint": { "message": "Warm-up ping to keep the session alive", "description": "Site detail: heartbeat hint." },
+  "rowMethod": { "message": "Request method", "description": "Site detail: method select row." },
+  "rowMethodHint": { "message": "HEAD is lighter; GET works on more servers.", "description": "Site detail: method hint." },
   "rowInterval": { "message": "Heartbeat interval", "description": "Site detail: interval row." },
   "rowActivity": { "message": "Anti-idle activity", "description": "Site detail: activity row." },
   "rowActivityHint": { "message": "Simulated user activity", "description": "Site detail: activity hint." },

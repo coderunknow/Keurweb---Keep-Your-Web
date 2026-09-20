@@ -246,6 +246,7 @@ function buildSiteDetail(rule) {
     // max comes from LIMITS.heartbeatIntervalSec.max (shared/constants.js);
     // keep in sync — the bounds-drift test reads this HTML and asserts equality.
     behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="${LIMITS.heartbeatIntervalSec.max}" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    behaviorRow(t('rowMethod'), t('rowMethodHint'), `<select data-site-key="heartbeatMethod"><option value="head" ${b.heartbeatMethod === 'head' ? 'selected' : ''}>${t('methodHead')}</option><option value="get" ${b.heartbeatMethod === 'get' ? 'selected' : ''}>${t('methodGet')}</option></select>`),
     behaviorRow(t('rowActivity'), t('rowActivityHint'), switchHtml(b.activity !== false, 'activity')),
     behaviorRow(t('rowAntiDiscard'), t('rowAntiDiscardHint'), switchHtml(b.antiDiscard !== false, 'antiDiscard')),
     behaviorRow(t('rowAutoReload'), t('rowAutoReloadHint'), switchHtml(b.autoReload !== false, 'autoReload')),
@@ -368,7 +369,10 @@ function bindSiteDetailEvents() {
     const key = input.dataset.siteKey;
     if (!rule || !key) continue;
     input.addEventListener('change', async () => {
-      const value = input.type === 'checkbox' ? input.checked : Number(input.value);
+      const value =
+        input.type === 'checkbox' ? input.checked
+          : input.type === 'select-one' ? input.value
+            : Number(input.value);
       await persist((s) => {
         if (!s.sites[rule]) s.sites[rule] = { enabled: true };
         s.sites[rule][key] = value;
