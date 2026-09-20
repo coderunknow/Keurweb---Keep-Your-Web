@@ -1,0 +1,174 @@
+/* Keurweb popup — layout on top of the shared tokens in base.css */
+
+body {
+  width: 360px;
+  min-height: 200px;
+}
+
+.kw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.kw-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--kw-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.kw-title h1 {
+  font-size: 17px;
+  letter-spacing: 0.2px;
+  color: var(--kw-text);
+}
+
+.kw-title .kw-brandmark {
+  width: 24px;
+  height: 24px;
+  -webkit-background-clip: initial;
+}
+
+main {
+  padding: 0 14px;
+}
+
+.kw-notice {
+  text-align: center;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  padding: 18px 14px;
+}
+
+.kw-notice p {
+  margin: 0;
+}
+
+/* Site header card */
+.kw-site-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+}
+
+.kw-site-id {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kw-favicon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--kw-surface-2);
+  flex: none;
+}
+
+.kw-site-name {
+  display: grid;
+  min-width: 0;
+}
+
+.kw-host {
+  font-weight: 650;
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kw-status-line {
+  color: var(--kw-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Controls card */
+.kw-controls {
+  margin-top: 10px;
+  display: grid;
+  gap: 12px;
+}
+
+.kw-keep-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
+.kw-keep-btn.on {
+  background: var(--kw-surface);
+  border: 1px solid color-mix(in srgb, var(--kw-ok) 45%, transparent);
+  color: var(--kw-ok);
+  font-weight: 650;
+}
+
+.kw-field {
+  display: grid;
+  gap: 6px;
+}
+
+.kw-field .kw-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 650;
+}
+
+.kw-inline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.kw-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.kw-check input {
+  accent-color: var(--kw-accent);
+  width: 15px;
+  height: 15px;
+}
+
+.kw-actions {
+  display: flex;
+  justify-content: space-between;
+  border-top: 1px solid var(--kw-border);
+  padding-top: 8px;
+}
+
+.kw-master-note {
+  margin: 10px 2px 0;
+  color: var(--kw-warn);
+  font-size: 12.5px;
+}
+
+footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--kw-border);
+  color: var(--kw-muted);
+  font-size: 12px;
+}
+
+footer .btn-ghost {
+  padding: 4px 8px;
+  font-size: 12px;
+}

@@ -1,0 +1,23 @@
+{
+  "name": "keurweb",
+  "version": "1.0.0",
+  "description": "Keurweb — Keep Your Web. Brave/Chrome extension that keeps your websites working for a long time without disconnects, session timeouts or frozen tabs.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "coderunknow",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/coderunknow/Keurweb---Keep-Your-Web.git"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "validate": "node scripts/validate-manifest.mjs",
+    "package": "node scripts/package.mjs",
+    "check": "node scripts/check-syntax.mjs",
+    "verify": "npm run check && npm run validate && npm run test && npm run package"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
