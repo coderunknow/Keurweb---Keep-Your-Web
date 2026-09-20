@@ -48,6 +48,20 @@ test('normalizeSettings drops invalid sites and log entries', () => {
   assert.equal(typeof s.log[1].ts, 'number');
 });
 
+test('normalizeSettings accepts wildcard rule keys and drops over-broad ones', () => {
+  const s = normalizeSettings({
+    sites: {
+      'https://App.Example.com/': { enabled: true },
+      '*.Sub.Example.com': { enabled: true, heartbeatIntervalSec: 120 },
+      '*.com': { enabled: true },
+      '*': { enabled: true },
+    },
+  });
+  assert.deepEqual(Object.keys(s.sites).sort(), ['*.sub.example.com', 'app.example.com']);
+  assert.equal(s.sites['*.sub.example.com'].heartbeatIntervalSec, 120);
+  assert.equal(s.sites['*.sub.example.com'].enabled, true);
+});
+
 test('normalizeSettings caps the log length', () => {
   const log = Array.from({ length: LIMITS.maxLogEntries + 100 }, (_, i) => ({ ts: i, message: `m${i}` }));
   const s = normalizeSettings({ log });

@@ -201,7 +201,11 @@ const openOptionsAt = (query) => {
   const url = chrome.runtime.getURL(`options/options.html${query}`);
   chrome.tabs.create({ url });
 };
-els.advanced.addEventListener('click', () => openOptionsAt(snapshot?.host ? `?site=${encodeURIComponent(snapshot.host)}` : ''));
+// Deep-link the options dashboard to the matched rule (wildcard or exact)
+// so the right site card is pre-selected.
+els.advanced.addEventListener('click', () =>
+  openOptionsAt(snapshot?.host ? `?site=${encodeURIComponent(snapshot.rule ?? snapshot.host)}` : ''),
+);
 els.openOptions.addEventListener('click', () => openOptionsAt(''));
 els.openOptionsFromUnsupported.addEventListener('click', () => openOptionsAt(''));
 

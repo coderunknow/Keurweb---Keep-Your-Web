@@ -8,7 +8,7 @@ import {
   DEFAULT_SITE_BEHAVIOR,
   LIMITS,
   defaultSettings,
-  normalizeSiteKey,
+  normalizeSiteRule,
 } from './constants.js';
 
 const KNOWN_BEHAVIOR_KEYS = new Set(Object.keys(DEFAULT_SITE_BEHAVIOR));
@@ -83,10 +83,10 @@ export function normalizeSettings(raw) {
 
   if (src.sites && typeof src.sites === 'object' && !Array.isArray(src.sites)) {
     for (const [key, value] of Object.entries(src.sites)) {
-      const host = normalizeSiteKey(key);
-      if (!host) continue;
-      settings.sites[host] = normalizeBehavior(value);
-      settings.sites[host].enabled = value?.enabled === true;
+      const rule = normalizeSiteRule(key);
+      if (!rule) continue;
+      settings.sites[rule] = normalizeBehavior(value);
+      settings.sites[rule].enabled = value?.enabled === true;
     }
   }
 

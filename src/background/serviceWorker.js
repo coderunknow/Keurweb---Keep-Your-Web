@@ -14,7 +14,7 @@
  */
 
 import { KeepAliveEngine } from '../shared/keepAliveEngine.js';
-import { LIMITS, MSG } from '../shared/constants.js';
+import { LIMITS, MSG, normalizeSiteKey } from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
 import { badgeFor, resolveBehavior, shouldProtect } from '../shared/policy.js';
 
@@ -267,13 +267,22 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const tab = await activeTabContext();
       const url = message.url ?? tab?.url ?? '';
-      const host = message.host ?? new URL(url).hostname.toLowerCase();
+      const host = message.host
+        ? normalizeSiteKey(message.host)
+        : url
+          ? new URL(url).hostname.toLowerCase()
+          : '';
+      if (!host) return { error: 'host required' };
+      // Toggling works on the exact host. When the host is only covered by a
+      // wildcard rule, the first toggle creates an exact override
+      // (enabled = !currently-protected) so a single site can be paused
+      // without touching the rest of the family.
+      const { siteEnabled } = resolveBehavior(settings, host);
       const saved = await store.update((s) => {
-        const site = s.sites[host];
-        if (site?.enabled) {
-          site.enabled = false;
+        if (s.sites[host]) {
+          s.sites[host].enabled = !s.sites[host].enabled;
         } else {
-          s.sites[host] = { ...(site ?? {}), enabled: true };
+          s.sites[host] = { enabled: !siteEnabled };
         }
         return s;
       });

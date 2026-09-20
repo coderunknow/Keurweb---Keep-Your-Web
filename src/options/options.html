@@ -163,10 +163,11 @@
 
         <div class="kw-card kw-add-site">
           <form id="addForm">
-            <input type="text" id="addInput" placeholder="example.com or https://app.example.com" autocomplete="off" spellcheck="false" aria-label="Site address" />
+            <input type="text" id="addInput" placeholder="example.com or *.example.com" autocomplete="off" spellcheck="false" aria-label="Site address" />
             <button type="submit" class="btn-primary">＋ Add site</button>
           </form>
           <p class="kw-hint" id="addError" role="alert"></p>
+          <p class="kw-hint">Tip: <code>*.example.com</code> protects the whole family — example.com and every subdomain.</p>
         </div>
 
         <div id="siteList" class="kw-site-list"></div>

@@ -4,7 +4,15 @@
  * service worker (SETTINGS_CHANGED) so open tabs re-evaluate immediately.
  */
 
-import { ALL_BEHAVIOR_KEYS, LIMITS, MSG, defaultSettings, normalizeSiteKey } from '../shared/constants.js';
+import {
+  ALL_BEHAVIOR_KEYS,
+  LIMITS,
+  MSG,
+  apexHostOfRule,
+  defaultSettings,
+  isWildcardRule,
+  normalizeSiteRule,
+} from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
 
 const store = new SettingsStore(chrome.storage.local);
@@ -61,15 +69,8 @@ const saveRecovery = () =>
     return s;
   });
 
-/** Notifies the worker that behavior for one site changed. */
-const saveSite = (host) =>
-  persist((s) => {
-    s.sites[host] = settings.sites[host];
-    return s;
-  });
-
-function letterIcon(host) {
-  const letter = (host || '?').charAt(0).toUpperCase();
+function letterIcon(rule) {
+  const letter = (apexHostOfRule(rule) || '?').charAt(0).toUpperCase();
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="8" fill="#4f46e5"/><text x="16" y="21" font-family="system-ui,sans-serif" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">${letter}</text></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
@@ -168,52 +169,61 @@ function reflectDependent(key) {
 
 // -------------------------------------------------------------------- sites
 
-function behaviorRow(label, hint, controlHtml, extra = '') {
-  return `<div class="kw-row" ${extra}>
+function behaviorRow(label, hint, controlHtml) {
+  return `<div class="kw-row">
     <span><span class="kw-label">${label}</span>${hint ? `<p class="kw-hint">${hint}</p>` : ''}</span>
     ${controlHtml}
   </div>`;
 }
 
-function switchHtml(id, checked, dataKey) {
-  return `<span class="kw-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} data-site-key="${dataKey}"><span class="kw-track"></span><span class="kw-knob"></span></span>`;
+function switchHtml(checked, dataKey) {
+  return `<span class="kw-switch"><input type="checkbox" ${checked ? 'checked' : ''} data-site-key="${dataKey}"><span class="kw-track"></span><span class="kw-knob"></span></span>`;
 }
 
-function siteDetailHtml(host) {
-  const site = settings.sites[host] ?? {};
+/**
+ * Builds the expandable per-site control panel.
+ * The template only interpolates validated numbers and static, localized
+ * strings — rule keys are attached via setAttribute, never as HTML.
+ */
+function buildSiteDetail(rule) {
+  const site = settings.sites[rule] ?? {};
   const b = { ...settings.defaults, ...site };
   const usingDefaults = ALL_BEHAVIOR_KEYS.every((k) => !(k in site));
   const interval = b.heartbeatIntervalSec ?? 60;
   const rows = [
-    behaviorRow('Session heartbeat', 'Warm-up ping to keep the session alive', switchHtml(`s-${host}-heartbeat`, b.heartbeat !== false, 'heartbeat')),
-    behaviorRow('Heartbeat interval', `Every <span data-site-val="${host}:heartbeatIntervalSec">${interval}</span>s`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec" data-site-host="${host}">`),
-    behaviorRow('Anti-idle activity', 'Simulated user activity', switchHtml(`s-${host}-activity`, b.activity !== false, 'activity')),
-    behaviorRow('Anti-discard sweep', 'Discourages tab freezing', switchHtml(`s-${host}-antiDiscard`, b.antiDiscard !== false, 'antiDiscard')),
-    behaviorRow('Auto-reconnect', 'Reload the tab when it dies', switchHtml(`s-${host}-autoReload`, b.autoReload !== false, 'autoReload')),
-    behaviorRow('Notify when reconnecting', '', switchHtml(`s-${host}-notifyOnReload`, b.notifyOnReload === true, 'notifyOnReload')),
+    behaviorRow('Session heartbeat', 'Warm-up ping to keep the session alive', switchHtml(b.heartbeat !== false, 'heartbeat')),
+    behaviorRow('Heartbeat interval', `<span data-hint="heartbeatIntervalSec">Every ${interval}s</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    behaviorRow('Anti-idle activity', 'Simulated user activity', switchHtml(b.activity !== false, 'activity')),
+    behaviorRow('Anti-discard sweep', 'Discourages tab freezing', switchHtml(b.antiDiscard !== false, 'antiDiscard')),
+    behaviorRow('Auto-reconnect', 'Reload the tab when it dies', switchHtml(b.autoReload !== false, 'autoReload')),
+    behaviorRow('Notify when reconnecting', '', switchHtml(b.notifyOnReload === true, 'notifyOnReload')),
   ].join('');
-  return `<div class="kw-site-detail" data-detail="${host}">
-    ${usingDefaults ? `<p class="kw-site-using-default">Using global defaults — customize below.</p>` : ''}
+  const wrap = document.createElement('div');
+  wrap.className = 'kw-site-detail';
+  wrap.dataset.detail = rule;
+  wrap.innerHTML = `
+    ${usingDefaults ? '<p class="kw-site-using-default">Using global defaults — customize below.</p>' : ''}
     ${rows}
     <div class="kw-btn-row">
-      <button class="btn-ghost" data-reset-site="${host}">↺ Reset to defaults</button>
-    </div>
-  </div>`;
+      <button class="btn-ghost" data-reset-site>↺ Reset to defaults</button>
+    </div>`;
+  return wrap;
 }
 
 function renderSites() {
-  const hosts = Object.keys(settings.sites).sort();
-  els.siteCount.textContent = hosts.length ? String(hosts.length) : '';
-  els.sitesEmpty.hidden = hosts.length > 0;
+  const rules = Object.keys(settings.sites).sort();
+  els.siteCount.textContent = rules.length ? String(rules.length) : '';
+  els.sitesEmpty.hidden = rules.length > 0;
   els.siteList.textContent = '';
 
-  for (const host of hosts) {
-    const site = settings.sites[host];
+  for (const rule of rules) {
+    const site = settings.sites[rule];
     const enabled = site?.enabled === true;
+    const wildcard = isWildcardRule(rule);
 
     const card = document.createElement('div');
     card.className = 'kw-card kw-site-item';
-    card.dataset.hostCard = host;
+    card.dataset.hostCard = rule;
 
     const head = document.createElement('div');
     head.className = 'kw-site-item-head';
@@ -225,19 +235,28 @@ function renderSites() {
     icon.height = 26;
     icon.onerror = () => {
       icon.onerror = null;
-      icon.src = letterIcon(host);
+      icon.src = letterIcon(rule);
     };
-    icon.src = `${chrome.runtime.getURL('/_favicon/')}?pageUrl=${encodeURIComponent(`https://${host}/`)}&size=32`;
+    icon.src = `${chrome.runtime.getURL('/_favicon/')}?pageUrl=${encodeURIComponent(`https://${apexHostOfRule(rule)}/`)}&size=32`;
 
     const name = document.createElement('span');
     name.className = 'kw-site-host';
-    name.textContent = host; // textContent — never inject hostnames as HTML
+    name.textContent = rule; // textContent — never inject rule keys as HTML
+
+    if (wildcard) {
+      const chip = document.createElement('span');
+      chip.className = 'kw-chip';
+      chip.textContent = 'Subdomains';
+      head.append(icon, name, chip);
+    } else {
+      head.append(icon, name);
+    }
 
     const customize = document.createElement('button');
     customize.className = 'btn-ghost';
-    customize.textContent = expandedSites.has(host) ? 'Hide options ▲' : 'Customize ▼';
+    customize.textContent = expandedSites.has(rule) ? 'Hide options ▲' : 'Customize ▼';
     customize.addEventListener('click', () => {
-      expandedSites.has(host) ? expandedSites.delete(host) : expandedSites.add(host);
+      expandedSites.has(rule) ? expandedSites.delete(rule) : expandedSites.add(rule);
       renderSites();
     });
 
@@ -247,14 +266,14 @@ function renderSites() {
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = enabled;
-    input.setAttribute('aria-label', `Protect ${host}`);
+    input.setAttribute('aria-label', `Protect ${rule}`);
     input.addEventListener('change', async () => {
       await persist((s) => {
-        if (!s.sites[host]) s.sites[host] = {};
-        s.sites[host].enabled = input.checked;
+        if (!s.sites[rule]) s.sites[rule] = {};
+        s.sites[rule].enabled = input.checked;
         return s;
       });
-      toast(input.checked ? `Protecting ${host}` : `${host} paused`);
+      toast(input.checked ? `Protecting ${rule}` : `${rule} paused`);
       renderSites();
     });
     const track = document.createElement('span');
@@ -266,21 +285,21 @@ function renderSites() {
     const remove = document.createElement('button');
     remove.className = 'btn-ghost btn-danger';
     remove.textContent = 'Remove';
-    remove.title = `Stop managing ${host}`;
+    remove.title = `Stop managing ${rule}`;
     remove.addEventListener('click', async () => {
-      if (!confirm(`Remove ${host} from Keurweb?`)) return;
+      if (!confirm(`Remove ${rule} from Keurweb?`)) return;
       await persist((s) => {
-        delete s.sites[host];
+        delete s.sites[rule];
         return s;
       });
-      toast(`${host} removed`);
+      toast(`${rule} removed`);
       renderSites();
     });
 
-    head.append(icon, name, customize, label, remove);
+    head.append(customize, label, remove);
     card.append(head);
-    if (expandedSites.has(host)) {
-      card.append(buildSiteDetail(host));
+    if (expandedSites.has(rule)) {
+      card.append(buildSiteDetail(rule));
     }
     els.siteList.append(card);
   }
@@ -290,29 +309,34 @@ function renderSites() {
 
 function bindSiteDetailEvents() {
   for (const input of els.siteList.querySelectorAll('[data-site-key]')) {
-    const host = input.dataset.siteHost ?? input.closest('[data-detail]')?.dataset.detail;
+    const rule = input.closest('[data-detail]')?.dataset.detail;
     const key = input.dataset.siteKey;
-    if (!host || !key) continue;
+    if (!rule || !key) continue;
     input.addEventListener('change', async () => {
       const value = input.type === 'checkbox' ? input.checked : Number(input.value);
       await persist((s) => {
-        if (!s.sites[host]) s.sites[host] = { enabled: true };
-        s.sites[host][key] = value;
+        if (!s.sites[rule]) s.sites[rule] = { enabled: true };
+        s.sites[rule][key] = value;
         return s;
       });
+      if (key === 'heartbeatIntervalSec') {
+        const hint = input.closest('.kw-row')?.querySelector('[data-hint]');
+        if (hint) hint.textContent = `Every ${value}s`;
+      }
       toast('Saved');
     });
   }
 
   for (const btn of els.siteList.querySelectorAll('[data-reset-site]')) {
-    const host = btn.dataset.resetSite;
+    const rule = btn.closest('[data-detail]')?.dataset.detail;
+    if (!rule) continue;
     btn.addEventListener('click', async () => {
       await persist((s) => {
-        const enabled = s.sites[host]?.enabled === true;
-        s.sites[host] = { ...(enabled ? { enabled: true } : {}) };
+        const enabled = s.sites[rule]?.enabled === true;
+        s.sites[rule] = { ...(enabled ? { enabled: true } : {}) };
         return s;
       });
-      toast(`${host} reset to defaults`);
+      toast(`${rule} reset to defaults`);
       renderSites();
     });
   }
@@ -320,28 +344,28 @@ function bindSiteDetailEvents() {
 
 els.addForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const host = normalizeSiteKey(els.addInput.value);
-  if (!host) {
-    els.addError.textContent = 'That doesn’t look like a website address. Try example.com';
+  const rule = normalizeSiteRule(els.addInput.value);
+  if (!rule) {
+    els.addError.textContent = 'That doesn’t look like a website address. Try example.com or *.example.com';
     els.addError.classList.add('error');
     return;
   }
-  if (settings.sites[host]) {
-    els.addError.textContent = `${host} is already in your list.`;
+  if (settings.sites[rule]) {
+    els.addError.textContent = `${rule} is already in your list.`;
     els.addError.classList.add('error');
-    expandedSites.add(host);
+    expandedSites.add(rule);
     renderSites();
     return;
   }
   els.addError.textContent = '';
   els.addError.classList.remove('error');
   await persist((s) => {
-    s.sites[host] = { enabled: true };
+    s.sites[rule] = { enabled: true };
     return s;
   });
   els.addInput.value = '';
-  expandedSites.add(host);
-  toast(`Now protecting ${host}`);
+  expandedSites.add(rule);
+  toast(`Now protecting ${rule}`);
   renderSites();
 });
 
@@ -445,14 +469,14 @@ const hashView = location.hash.replace('#', '');
 hydrate().then(() => {
   show(VIEWS.includes(hashView) ? hashView : 'general');
   if (preselect) {
-    const host = normalizeSiteKey(preselect);
-    if (host && settings.sites[host]) {
-      expandedSites.add(host);
+    const rule = normalizeSiteRule(preselect);
+    if (rule && settings.sites[rule]) {
+      expandedSites.add(rule);
       show('sites');
       renderSites();
-      $(`[data-host-card="${CSS.escape(host)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (host) {
-      els.addInput.value = host;
+      $(`[data-host-card="${CSS.escape(rule)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (rule) {
+      els.addInput.value = rule;
       show('sites');
       els.addInput.focus();
     }

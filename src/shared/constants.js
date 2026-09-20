@@ -90,10 +90,20 @@ export const ALL_BEHAVIOR_KEYS = Object.freeze([
   'antiDiscard',
 ]);
 
+/** Prefix marking a wildcard (subdomain) site rule, e.g. "*.example.com". */
+export const WILDCARD_PREFIX = '*.';
+
 /**
- * Normalizes any URL-ish string to a bare hostname used as the site key.
- * Returns '' for inputs without a parseable hostname (scheme-relative URLs,
- * plain paths, empty strings).
+ * Bare-hostname charset after URL parsing: DNS labels, IPv6 addresses and
+ * single-label hosts (localhost). Wildcards are rejected here on purpose —
+ * wildcard rules go through normalizeSiteRule.
+ */
+const HOSTNAME_RE = /^[a-z0-9:\-._]+$/i;
+
+/**
+ * Normalizes any URL-ish string to a bare hostname used as an exact-match
+ * site key. Returns '' for inputs without a parseable hostname
+ * (scheme-relative URLs, plain paths, empty strings, wildcard input).
  * @param {string} input
  * @returns {string}
  */
@@ -104,9 +114,66 @@ export function normalizeSiteKey(input) {
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate)) candidate = `https://${candidate}`;
   try {
     const url = new URL(candidate);
-    if (!url.hostname) return '';
-    return url.hostname.toLowerCase();
+    const host = url.hostname.toLowerCase();
+    if (!host || host.includes('*') || !HOSTNAME_RE.test(host)) return '';
+    return host;
   } catch {
     return '';
   }
+}
+
+/**
+ * True when a stored site rule is a wildcard subdomain rule ("*.example.com").
+ * @param {string} rule
+ */
+export function isWildcardRule(rule) {
+  return (
+    typeof rule === 'string' &&
+    rule.startsWith(WILDCARD_PREFIX) &&
+    !rule.slice(WILDCARD_PREFIX.length).includes('*')
+  );
+}
+
+/**
+ * Normalizes user input into a site rule key: an exact hostname
+ * ("example.com") or a wildcard rule ("*.example.com").
+ *
+ * A wildcard rule requires at least two labels after the asterisk
+ * ("*.example.com"), so over-broad rules like "*.com" are rejected.
+ * Returns '' when the input is not a usable site rule.
+ * @param {string} input
+ * @returns {string}
+ */
+export function normalizeSiteRule(input) {
+  const raw = String(input ?? '').trim();
+  if (!raw) return '';
+  const noScheme = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '');
+  const wildcard = noScheme.startsWith(WILDCARD_PREFIX);
+  const host = normalizeSiteKey(wildcard ? noScheme.slice(WILDCARD_PREFIX.length) : raw);
+  if (!host) return '';
+  if (!wildcard) return host;
+  if (!host.includes('.')) return '';
+  return WILDCARD_PREFIX + host;
+}
+
+/**
+ * True when a hostname is covered by a site rule. Wildcard rules cover the
+ * apex domain and every subdomain ("*.example.com" matches example.com,
+ * app.example.com, a.b.example.com). Exact rules match only their host.
+ * @param {string} rule  site rule key (exact or wildcard)
+ * @param {string} host  bare hostname
+ */
+export function hostMatchesRule(rule, host) {
+  if (typeof rule !== 'string' || typeof host !== 'string') return false;
+  const h = host.toLowerCase();
+  if (isWildcardRule(rule)) {
+    const apex = rule.slice(WILDCARD_PREFIX.length);
+    return h === apex || h.endsWith(`.${apex}`);
+  }
+  return h === rule.toLowerCase();
+}
+
+/** The apex hostname a rule belongs to ("*.app.example.com" → "app.example.com"). */
+export function apexHostOfRule(rule) {
+  return isWildcardRule(rule) ? rule.slice(WILDCARD_PREFIX.length) : String(rule ?? '');
 }

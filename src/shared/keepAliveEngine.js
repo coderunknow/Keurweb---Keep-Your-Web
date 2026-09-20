@@ -307,7 +307,7 @@ export class KeepAliveEngine {
    * @param {string} url the popup's active tab URL
    */
   describeSite(settings, url) {
-    const { behavior, source, siteEnabled } = resolveBehavior(settings, url);
+    const { behavior, source, siteEnabled, rule, viaWildcard } = resolveBehavior(settings, url);
     let host = '';
     try {
       host = new URL(url).hostname.toLowerCase();
@@ -323,6 +323,8 @@ export class KeepAliveEngine {
       masterEnabled: settings.masterEnabled,
       source,
       siteEnabled,
+      rule,
+      viaWildcard,
       behavior,
       tracked: Boolean(tab),
       recovering: Boolean(tab?.recovery),
