@@ -63,8 +63,8 @@ The UI is available in **English** and **Tiếng Việt** and follows your brows
 │ chrome.*)  │                    |  - page quiet?       |
 └─────┬──────┘                    |  - sweep due?        |
       │                           |  - reload due?       |
-      ▼                           └─────────────────────┘
- fetch() warm-up ping (credentials included, no-cors)
+      ▼                           |  - quiet hours?      |
+ fetch() warm-up ping (credentials included, no-cors)   └─────────────────────┘
  chrome.scripting → content script (activity simulation, offline detection)
  chrome.tabs.reload with exponential backoff
 ```
@@ -114,9 +114,11 @@ The core (`shared/keepAliveEngine.js`, `shared/policy.js`, `shared/settings.js`)
 
 ## Roadmap ideas
 
-- Wildcard / subdomain matching for site rules
-- WebSocket liveness probes
+- WebSocket liveness probes (connect-only health checks for sites that expose a ws/wss endpoint)
 - Optional "pause when on battery" mode
+- Quiet hours — pause protection on a daily schedule (shipped in v1.2.0)
+- Per-site heartbeat method selection (shipped in v1.2.0)
+- Standby badge state for recovery-cooldown periods (shipped in v1.2.0)
 
 ## License
 
