@@ -70,6 +70,30 @@ for (const [name, cmd] of Object.entries(manifest.commands ?? {})) {
   check(typeof cmd.description === 'string' && cmd.description, `command ${name} needs a description`);
 }
 
+// ---- i18n (__MSG_*__ references) -------------------------------------------
+const msgRefs = [];
+const collectMsgRefs = (value, where) => {
+  if (typeof value !== 'string') return;
+  for (const m of value.matchAll(/__MSG_([a-zA-Z][\w-]*)__/g)) msgRefs.push({ key: m[1], where });
+};
+collectMsgRefs(manifest.name, 'name');
+collectMsgRefs(manifest.description, 'description');
+collectMsgRefs(manifest.action?.default_title, 'action.default_title');
+for (const [name, cmd] of Object.entries(manifest.commands ?? {})) {
+  collectMsgRefs(cmd.description, `commands.${name}`);
+}
+if (msgRefs.length) {
+  check(typeof manifest.default_locale === 'string' && manifest.default_locale, 'default_locale is required when using __MSG_*__ strings');
+  const localePath = resolve(root, 'src', '_locales', manifest.default_locale, 'messages.json');
+  check(existsSync(localePath), `missing _locales/${manifest.default_locale}/messages.json`);
+  if (existsSync(localePath)) {
+    const msgs = JSON.parse(readFileSync(localePath, 'utf8'));
+    for (const { key, where } of msgRefs) {
+      check(typeof msgs[key]?.message === 'string', `manifest.${where} references unknown i18n key: ${key}`);
+    }
+  }
+}
+
 if (problems.length) {
   console.error(`✗ manifest validation failed (${problems.length}):`);
   for (const problem of problems) console.error(`  - ${problem}`);

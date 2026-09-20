@@ -4,22 +4,49 @@
  * behavior resolution, reload scheduling and badge state.
  */
 
-import { DEFAULT_SITE_BEHAVIOR, normalizeSiteKey } from './constants.js';
+import { DEFAULT_SITE_BEHAVIOR, hostMatchesRule, isWildcardRule, normalizeSiteKey } from './constants.js';
+
+/**
+ * Finds the site rule (exact or wildcard) that applies to a host.
+ * An exact-match rule always wins over wildcards; when several wildcard
+ * rules match, the most specific one (longest rule) wins.
+ * @param {object} rules settings.sites map
+ * @param {string} host bare hostname
+ * @returns {string|null} the rule key, or null when no rule matches
+ */
+export function findSiteRule(rules, host) {
+  const key = normalizeSiteKey(host);
+  if (!key) return null;
+  if (rules?.[key]) return key;
+  let best = null;
+  for (const rule of Object.keys(rules ?? {})) {
+    if (!isWildcardRule(rule)) continue;
+    if (hostMatchesRule(rule, key) && (!best || rule.length > best.length)) best = rule;
+  }
+  return best;
+}
 
 /**
  * Resolves the effective behavior for a host:
- * the per-site override when present, otherwise the global defaults.
+ * the per-site override (exact rule, else the best wildcard rule) when
+ * present, otherwise the global defaults.
  * @param {object} settings normalized settings tree
  * @param {string} host hostname of the site
- * @returns {{behavior: object, source: 'site'|'default', siteEnabled: boolean}}
+ * @returns {{behavior: object, source: 'site'|'default', siteEnabled: boolean, rule: string|null, viaWildcard: boolean}}
  */
 export function resolveBehavior(settings, host) {
-  const key = normalizeSiteKey(host);
-  const override = key ? settings.sites[key] : undefined;
+  const rule = findSiteRule(settings?.sites, host);
+  const override = rule ? settings.sites[rule] : undefined;
   if (override) {
-    return { behavior: { ...settings.defaults, ...override }, source: 'site', siteEnabled: override.enabled === true };
+    return {
+      behavior: { ...settings.defaults, ...override },
+      source: 'site',
+      siteEnabled: override.enabled === true,
+      rule,
+      viaWildcard: isWildcardRule(rule),
+    };
   }
-  return { behavior: { ...settings.defaults }, source: 'default', siteEnabled: false };
+  return { behavior: { ...settings.defaults }, source: 'default', siteEnabled: false, rule: null, viaWildcard: false };
 }
 
 /**
@@ -67,18 +94,22 @@ export function canAttemptReload(rec, maxAttempts, budgetMin, now) {
   return now - rec.firstAttemptAt < budgetMs;
 }
 
-/** Badge descriptor for a protection state. */
+/**
+ * Badge descriptor for a protection state.
+ * The tooltip is an i18n message key (titleKey) so the pure core never
+ * hardcodes user-facing prose; the worker resolves it via chrome.i18n.
+ */
 export function badgeFor(state) {
   switch (state) {
     case 'protected':
-      return { text: 'ON', color: '#16a34a', title: 'Keurweb: protecting this site' };
+      return { text: 'ON', color: '#16a34a', titleKey: 'badgeProtected' };
     case 'recovering':
-      return { text: 'RX', color: '#dc2626', title: 'Keurweb: recovering this tab' };
+      return { text: 'RX', color: '#dc2626', titleKey: 'badgeRecovering' };
     case 'global-off':
-      return { text: 'OFF', color: '#6b7280', title: 'Keurweb: master switch is off' };
+      return { text: 'OFF', color: '#6b7280', titleKey: 'badgeGlobalOff' };
     case 'site-off':
-      return { text: 'OFF', color: '#9ca3af', title: 'Keurweb: not enabled for this site' };
+      return { text: 'OFF', color: '#9ca3af', titleKey: 'badgeSiteOff' };
     default:
-      return { text: '', color: '#6b7280', title: 'Keurweb' };
+      return { text: '', color: '#6b7280', titleKey: 'badgeDefault' };
   }
 }

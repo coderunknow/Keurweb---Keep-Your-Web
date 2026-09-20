@@ -14,7 +14,7 @@
  */
 
 import { KeepAliveEngine } from '../shared/keepAliveEngine.js';
-import { LIMITS, MSG } from '../shared/constants.js';
+import { LIMITS, MSG, normalizeSiteKey } from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
 import { badgeFor, resolveBehavior, shouldProtect } from '../shared/policy.js';
 
@@ -24,6 +24,29 @@ const ERROR_PAGE_URL = 'chrome-error://chromewebdata/';
 
 const store = new SettingsStore(chrome.storage.local);
 const engine = new KeepAliveEngine();
+
+/**
+ * Persists the stat counters the engine mutated on a settings tree.
+ * Stats live in chrome.storage.local (durable + exportable), unlike tab
+ * state which only needs storage.session.
+ */
+async function persistStats(settings) {
+  await store.update((s) => {
+    s.stats = settings.stats;
+    return s;
+  });
+}
+
+/**
+ * Runs reportDisconnect and persists stats when a reload was scheduled
+ * (that's the only path that mutates lastDisconnectAt).
+ */
+async function disconnectAndPersist(tabId, settings, detail) {
+  const intents = engine.reportDisconnect(tabId, settings, detail);
+  await runIntents(intents);
+  if (intents.some((i) => i.kind === 'reload')) await persistStats(settings);
+  return intents;
+}
 
 /** tabId -> {state, title} for the active-tab badge. */
 const badgeState = new Map();
@@ -38,14 +61,31 @@ const recoveringTabs = new Set();
 // Badge
 
 async function paintBadge(tabId, state) {
-  const { text, color, title } = badgeFor(state);
+  const { text, color, titleKey } = badgeFor(state);
   badgeState.set(tabId, state);
   try {
     await chrome.action.setBadgeText({ tabId, text });
     if (text) await chrome.action.setBadgeBackgroundColor({ tabId, color });
-    await chrome.action.setTitle({ tabId, title });
+    await chrome.action.setTitle({ tabId, title: chrome.i18n.getMessage(titleKey) || 'Keurweb' });
   } catch {
     /* tab closed before paint — ignore */
+  }
+}
+
+/**
+ * Shows a desktop notification (only fires for sites with
+ * "notify when reconnecting" turned on).
+ */
+function notify(titleKey, messageKey, messageParams) {
+  try {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'assets/icons/icon128.png',
+      title: chrome.i18n.getMessage(titleKey),
+      message: chrome.i18n.getMessage(messageKey, messageParams ?? []),
+    });
+  } catch {
+    /* notifications unavailable in this context — ignore */
   }
 }
 
@@ -60,7 +100,7 @@ async function runIntents(intents) {
           await paintBadge(intent.tabId, intent.state);
           break;
         case 'ping':
-          void performHeartbeat(intent.tabId, intent.url);
+          void performHeartbeat(intent.tabId, intent.url, intent.method);
           break;
         case 'simulate':
           await sendToTab(intent.tabId, { cmd: 'keurweb-simulate', mode: currentMode(intent.host) });
@@ -75,7 +115,7 @@ async function runIntents(intents) {
           scheduleReload(intent.tabId, intent.delayMs);
           break;
         case 'notify':
-          notify(intent.message);
+          notify(intent.titleKey, intent.messageKey, intent.messageParams);
           break;
         default:
           break;
@@ -117,10 +157,10 @@ async function sweepTab(tabId) {
 // --------------------------------------------------------------------------
 // Heartbeat (worker-side warm-up ping)
 
-async function performHeartbeat(tabId, url) {
+async function performHeartbeat(tabId, url, method = 'HEAD') {
   try {
     await fetch(url, {
-      method: 'HEAD',
+      method,
       mode: 'no-cors',
       credentials: 'include',
       cache: 'no-store',
@@ -133,8 +173,7 @@ async function performHeartbeat(tabId, url) {
     if (fails >= HEARTBEAT_FAILS_BEFORE_RELOAD) {
       heartbeatFails.delete(tabId);
       const settings = await store.load();
-      const intents = engine.reportDisconnect(tabId, settings, { kind: 'heartbeat' });
-      await runIntents(intents);
+      await disconnectAndPersist(tabId, settings, { kind: 'heartbeat' });
     }
   }
 }
@@ -148,7 +187,12 @@ function scheduleReload(tabId, delayMs) {
     pendingReloads.delete(tabId);
     try {
       const tab = await chrome.tabs.get(tabId);
-      if (!tab.discarded && tab.url && tab.url.startsWith('http')) {
+      const url = tab.url || '';
+      // chrome-error:// pages must be reloadable — that's how a failed
+      // navigation is retried. Discarded tabs are skipped (the anti-discard
+      // sweep handles those separately).
+      const reloadable = url.startsWith('http') || url.startsWith('chrome-error:');
+      if (!tab.discarded && reloadable) {
         recoveringTabs.add(tabId);
         await chrome.tabs.reload(tabId);
       }
@@ -178,6 +222,14 @@ async function injectIntoTab(tabId) {
 
 async function considerTab(tabId, url, status) {
   const settings = await store.load();
+
+  // Chrome's error page is not http(s), so this must run before the
+  // protocol gate — otherwise failed loads are untracked and never recovered.
+  if (url === ERROR_PAGE_URL) {
+    await disconnectAndPersist(tabId, settings, { kind: 'error-page' });
+    return;
+  }
+
   if (!url || !/^https?:/i.test(url)) {
     if (engine.getTab(tabId)) engine.untrackTab(tabId);
     return;
@@ -188,16 +240,10 @@ async function considerTab(tabId, url, status) {
   // Tab finished loading after a recovery reload?
   if (status === 'complete' && recoveringTabs.has(tabId)) {
     recoveringTabs.delete(tabId);
-    const intents = engine.noteRecovered(tabId);
+    const intents = engine.noteRecovered(tabId, settings);
     await runIntents(intents);
+    if (settings.stats) await persistStats(settings);
     await injectIntoTab(tabId);
-    return;
-  }
-
-  // Chrome network error page → treat as disconnect.
-  if (url === ERROR_PAGE_URL) {
-    const intents = engine.reportDisconnect(tabId, settings, { kind: 'error-page' });
-    await runIntents(intents);
     return;
   }
 
@@ -267,18 +313,27 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const tab = await activeTabContext();
       const url = message.url ?? tab?.url ?? '';
-      const host = message.host ?? new URL(url).hostname.toLowerCase();
+      const host = message.host
+        ? normalizeSiteKey(message.host)
+        : url
+          ? new URL(url).hostname.toLowerCase()
+          : '';
+      if (!host) return { error: 'host required' };
+      // Toggling works on the exact host. When the host is only covered by a
+      // wildcard rule, the first toggle creates an exact override
+      // (enabled = !currently-protected) so a single site can be paused
+      // without touching the rest of the family.
+      const { siteEnabled } = resolveBehavior(settings, host);
       const saved = await store.update((s) => {
-        const site = s.sites[host];
-        if (site?.enabled) {
-          site.enabled = false;
+        if (s.sites[host]) {
+          s.sites[host].enabled = !s.sites[host].enabled;
         } else {
-          s.sites[host] = { ...(site ?? {}), enabled: true };
+          s.sites[host] = { enabled: !siteEnabled };
         }
         return s;
       });
       const nowEnabled = saved.sites[host]?.enabled === true;
-      engine.push('info', `${host} ${nowEnabled ? 'enabled' : 'disabled'} via popup`);
+      engine.push('info', nowEnabled ? 'logToggledOn' : 'logToggledOff', [host]);
       await resyncAllTabs();
       return { host, enabled: nowEnabled };
     }
@@ -315,8 +370,7 @@ async function handleMessage(message, sender = {}) {
       const tabId = sender?.tab?.id;
       if (!Number.isInteger(tabId)) return {};
       const settings = await store.load();
-      const intents = engine.reportDisconnect(tabId, settings, message.detail ?? {});
-      await runIntents(intents);
+      await disconnectAndPersist(tabId, settings, message.detail ?? {});
       return {};
     }
 
@@ -324,7 +378,9 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const tab = await activeTabContext();
       if (tab?.id && tab.url && shouldProtect(settings, tab.url)) {
-        void performHeartbeat(tab.id, tab.url);
+        const intents = engine.pingNow(tab.id, settings, tab.url);
+        await runIntents(intents);
+        if (intents.length) await persistStats(settings);
         await sendToTab(tab.id, { cmd: 'keurweb-simulate', mode: 'both' });
       }
       return {};
@@ -415,8 +471,10 @@ chrome.commands?.onCommand.addListener(async (command) => {
 
 async function runTick() {
   const settings = await store.load();
+  const statsBefore = JSON.stringify(settings.stats);
   const intents = engine.tick(settings);
   await runIntents(intents);
+  if (JSON.stringify(settings.stats) !== statsBefore) await persistStats(settings);
   persistSession();
 }
 

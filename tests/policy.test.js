@@ -1,11 +1,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defaultSettings } from '../src/shared/constants.js';
-import { badgeFor, canAttemptReload, reloadDelaySec, resolveBehavior, shouldProtect } from '../src/shared/policy.js';
+import { badgeFor, canAttemptReload, findSiteRule, reloadDelaySec, resolveBehavior, shouldProtect } from '../src/shared/policy.js';
+
+const src = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
 const withSite = (overrides = {}) => {
   const s = defaultSettings();
   s.sites['app.example.com'] = { enabled: true, ...overrides };
+  return s;
+};
+
+const withWildcard = (rule = '*.example.com', overrides = {}) => {
+  const s = defaultSettings();
+  s.sites[rule] = { enabled: true, ...overrides };
   return s;
 };
 
@@ -44,6 +55,61 @@ test('shouldProtect respects per-site disable', () => {
   assert.equal(shouldProtect(s, 'https://app.example.com'), false);
 });
 
+// ------------------------------------------------------- wildcard rules
+
+test('findSiteRule: exact rule wins over wildcard', () => {
+  const s = withWildcard();
+  s.sites['app.example.com'] = { enabled: false };
+  assert.equal(findSiteRule(s.sites, 'app.example.com'), 'app.example.com');
+  assert.equal(findSiteRule(s.sites, 'example.com'), '*.example.com');
+});
+
+test('findSiteRule: most specific wildcard wins', () => {
+  const s = withWildcard();
+  s.sites['*.app.example.com'] = { enabled: true };
+  assert.equal(findSiteRule(s.sites, 'api.app.example.com'), '*.app.example.com');
+  assert.equal(findSiteRule(s.sites, 'web.example.com'), '*.example.com');
+  assert.equal(findSiteRule(s.sites, 'other.com'), null);
+});
+
+test('wildcard rule protects apex and subdomains, nothing else', () => {
+  const s = withWildcard();
+  assert.equal(shouldProtect(s, 'https://example.com'), true, 'apex covered');
+  assert.equal(shouldProtect(s, 'https://app.example.com/x'), true, 'subdomain covered');
+  assert.equal(shouldProtect(s, 'https://a.b.example.com'), true, 'deep subdomain covered');
+  assert.equal(shouldProtect(s, 'https://notexample.com'), false, 'suffixed look-alike untouched');
+  assert.equal(shouldProtect(s, 'https://example.com.evil.com'), false, 'trailing-label trick untouched');
+});
+
+test('wildcard disabled via wildcard rule disables the whole family', () => {
+  const s = withWildcard(undefined, { enabled: false });
+  assert.equal(shouldProtect(s, 'https://app.example.com'), false);
+});
+
+test('exact disabled rule overrides an enabled wildcard for that host only', () => {
+  const s = withWildcard();
+  s.sites['app.example.com'] = { enabled: false };
+  assert.equal(shouldProtect(s, 'https://app.example.com'), false, 'exact override wins');
+  assert.equal(shouldProtect(s, 'https://other.example.com'), true, 'siblings stay protected');
+});
+
+test('resolveBehavior reports which rule matched and whether it is a wildcard', () => {
+  const s = withWildcard();
+  const viaWildcard = resolveBehavior(s, 'app.example.com');
+  assert.equal(viaWildcard.rule, '*.example.com');
+  assert.equal(viaWildcard.viaWildcard, true);
+  assert.equal(viaWildcard.source, 'site');
+
+  const viaExact = resolveBehavior(withSite(), 'app.example.com');
+  assert.equal(viaExact.rule, 'app.example.com');
+  assert.equal(viaExact.viaWildcard, false);
+
+  const none = resolveBehavior(defaultSettings(), 'unknown.example.com');
+  assert.equal(none.rule, null);
+  assert.equal(none.viaWildcard, false);
+  assert.equal(none.siteEnabled, false);
+});
+
 test('reloadDelaySec grows exponentially and is capped', () => {
   assert.equal(reloadDelaySec(1, 5), 5);
   assert.equal(reloadDelaySec(2, 5), 10);
@@ -68,4 +134,13 @@ test('badgeFor maps states to visuals', () => {
   assert.equal(badgeFor('global-off').text, 'OFF');
   assert.equal(badgeFor('site-off').text, 'OFF');
   assert.equal(badgeFor('unknown').text, '');
+});
+
+test('badgeFor tooltips are i18n keys, not prose', () => {
+  const en = JSON.parse(readFileSync(resolve(src, '_locales/en/messages.json'), 'utf8'));
+  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'unknown']) {
+    const { titleKey } = badgeFor(state);
+    assert.ok(titleKey in en, `titleKey ${titleKey} must exist in en messages`);
+    assert.equal(badgeFor(state).title, undefined, 'no hardcoded tooltip prose');
+  }
 });

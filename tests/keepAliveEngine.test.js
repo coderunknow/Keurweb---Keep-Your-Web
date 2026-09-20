@@ -209,11 +209,52 @@ test('describeSite exposes countdown and recovery state', () => {
 
 test('log is capped and clearable', () => {
   const { engine } = makeEngine();
-  for (let i = 0; i < LIMITS.maxLogEntries + 50; i++) engine.push('info', `e${i}`);
+  for (let i = 0; i < LIMITS.maxLogEntries + 50; i++) engine.push('info', 'logTest', [String(i)]);
   assert.equal(engine.getLog().length, LIMITS.maxLogEntries);
-  assert.equal(engine.getLog().at(-1).message, `e${LIMITS.maxLogEntries + 49}`);
+  assert.equal(engine.getLog().at(-1).key, 'logTest');
+  assert.deepEqual(engine.getLog().at(-1).params, [String(LIMITS.maxLogEntries + 49)]);
   engine.clearLog();
   assert.equal(engine.getLog().length, 0);
+});
+
+test('log entries are structured (i18n key + params), never pre-formatted prose', () => {
+  const { engine, advance } = makeEngine();
+  const s = settingsWith();
+  engine.trackTab(1, 'https://app.example.com/x', s);
+  engine.reportDisconnect(1, s, { kind: 'network', status: 503 });
+  engine.noteRecovered(1);
+
+  for (const entry of engine.getLog()) {
+    assert.equal(typeof entry.key, 'string', 'every entry carries an i18n key');
+    assert.ok(Array.isArray(entry.params), 'every entry carries substitution params');
+    assert.equal(entry.message, undefined, 'no pre-formatted prose in the pure core');
+    assert.equal(typeof entry.ts, 'number');
+    assert.ok(['info', 'warn', 'error'].includes(entry.level));
+  }
+  const tracked = engine.getLog().find((l) => l.key === 'logTracking');
+  assert.deepEqual(tracked.params, ['app.example.com', '1']);
+  const scheduled = engine.getLog().find((l) => l.key === 'logReloadScheduled');
+  assert.equal(scheduled.params[0], 'app.example.com');
+  assert.equal(scheduled.params[1], 'network 503', 'reason keeps kind + status');
+  advance(1000);
+});
+
+test('notifyOnReload emits a localized notify intent on the first attempt only', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  s.sites['app.example.com'].notifyOnReload = true;
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  const first = engine.reportDisconnect(1, s, { kind: 'network' });
+  const note = first.find((i) => i.kind === 'notify');
+  assert.ok(note, 'notification intent on first attempt');
+  assert.equal(note.titleKey, 'notifyTitle');
+  assert.equal(note.messageKey, 'notifyReconnect');
+  assert.deepEqual(note.messageParams, ['app.example.com']);
+  assert.equal(note.message, undefined, 'no pre-formatted prose');
+
+  const second = engine.reportDisconnect(1, s, {});
+  assert.equal(second.find((i) => i.kind === 'notify'), undefined, 'no notification on later attempts');
 });
 
 test('untrackTab forgets the tab entirely', () => {
@@ -230,3 +271,101 @@ test('untrackTab forgets the tab entirely', () => {
 function advanceTicks(engine, s, n) {
   for (let i = 0; i < n; i++) engine.tick(s);
 }
+
+// -------------------------------------------------------------------- stats
+
+test('tick counts heartbeats into settings.stats for the matching rule', () => {
+  const { engine, advance } = makeEngine();
+  const s = defaultSettings();
+  s.sites['*.example.com'] = { enabled: true };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  advance(10_000);
+  engine.tick(s);
+  assert.equal(s.stats['*.example.com'].heartbeats, 1, 'wildcard rule receives the counter');
+  assert.ok(s.stats['*.example.com'].lastHeartbeatAt > 0);
+  assert.equal('app.example.com' in s.stats, false, 'no exact-rule entry under a wildcard');
+
+  advance(10_000);
+  engine.tick(s); // interval not elapsed
+  assert.equal(s.stats['*.example.com'].heartbeats, 1, 'no double count before the interval');
+
+  advance(60_000);
+  engine.tick(s);
+  assert.equal(s.stats['*.example.com'].heartbeats, 2);
+});
+
+test('disconnect and recovery update the per-rule counters', () => {
+  const { engine, advance, time } = makeEngine();
+  const s = settingsWith();
+  engine.trackTab(1, 'https://app.example.com/x', s);
+  advance(1_000);
+
+  const t0 = time();
+  engine.reportDisconnect(1, s, { kind: 'network' });
+  assert.equal(s.stats['app.example.com'].lastDisconnectAt, t0, 'disconnect time recorded');
+  assert.equal(s.stats['app.example.com'].recoveries, 0, 'not a recovery yet');
+
+  engine.noteRecovered(1, s);
+  assert.equal(s.stats['app.example.com'].recoveries, 1);
+  assert.ok(s.stats['app.example.com'].lastRecoverAt >= t0);
+
+  // noteRecovered without settings must not increment recoveries
+  const s2 = settingsWith();
+  const { engine: e2 } = makeEngine();
+  e2.trackTab(1, 'https://app.example.com/x', s2);
+  e2.reportDisconnect(1, s2, {});
+  e2.noteRecovered(1);
+  assert.equal(s2.stats['app.example.com']?.recoveries ?? 0, 0, 'no settings → no recovery counter');
+  assert.equal(s2.stats['app.example.com']?.lastRecoverAt ?? 0, 0);
+});
+
+test('pingNow counts a manual heartbeat for tracked and untracked protected tabs', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  let intents = engine.pingNow(1, s, 'https://app.example.com/x');
+  assert.equal(intents.length, 1);
+  assert.equal(intents[0].kind, 'ping');
+  assert.equal(s.stats['app.example.com'].heartbeats, 1);
+
+  // untracked tab: still pings the protected URL and counts
+  intents = engine.pingNow(99, s, 'https://app.example.com/y');
+  assert.equal(intents.length, 1);
+  assert.equal(s.stats['app.example.com'].heartbeats, 2);
+
+  // unprotected URL: refused
+  assert.deepEqual(engine.pingNow(99, s, 'https://other.example.com/'), []);
+  assert.equal(s.stats['app.example.com'].heartbeats, 2);
+});
+
+test('pingNow prefers the provided URL over a stale tracked record', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  s.sites['other.example.com'] = { enabled: true };
+  engine.trackTab(5, 'https://app.example.com/x', s);
+
+  const intents = engine.pingNow(5, s, 'https://other.example.com/z');
+  assert.equal(intents.length, 1);
+  assert.equal(intents[0].url, 'https://other.example.com/z', 'popup URL is authoritative');
+  assert.equal(s.stats['other.example.com'].heartbeats, 1, 'stat goes to the pinged rule');
+  assert.equal(s.stats['app.example.com']?.heartbeats ?? 0, 0);
+});
+
+test('describeSite exposes the matching rule\'s stats', () => {
+  const { engine, advance } = makeEngine();
+  const s = defaultSettings();
+  s.sites['*.example.com'] = { enabled: true };
+  engine.trackTab(1, 'https://app.example.com/dash', s);
+  advance(10_000);
+  engine.tick(s);
+
+  const snap = engine.describeSite(s, 'https://app.example.com/dash');
+  assert.equal(snap.rule, '*.example.com');
+  assert.equal(snap.stats.heartbeats, 1);
+
+  const none = engine.describeSite(s, 'https://unrelated.com/');
+  assert.equal(none.rule, null);
+  assert.equal(none.stats, null, 'unmatched hosts report no stats');
+});

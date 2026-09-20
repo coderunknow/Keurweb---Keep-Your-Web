@@ -15,25 +15,25 @@
         <span class="kw-brandmark kw-brandmark-lg" aria-hidden="true"></span>
         <div>
           <h1>Keurweb</h1>
-          <p class="kw-tagline">Keep Your Web</p>
+          <p class="kw-tagline" data-i18n="tagline">Keep Your Web</p>
         </div>
       </div>
 
       <nav aria-label="Settings sections">
-        <button class="kw-nav-btn active" data-view="general">⚙️ General</button>
-        <button class="kw-nav-btn" data-view="sites">🌐 Sites <span id="siteCount" class="kw-count"></span></button>
-        <button class="kw-nav-btn" data-view="log">📋 Activity log</button>
-        <button class="kw-nav-btn" data-view="about">ℹ️ About</button>
+        <button class="kw-nav-btn active" data-view="general"><span aria-hidden="true">⚙️</span> <span data-i18n="navGeneral">General</span></button>
+        <button class="kw-nav-btn" data-view="sites"><span aria-hidden="true">🌐</span> <span data-i18n="navSites">Sites</span> <span id="siteCount" class="kw-count"></span></button>
+        <button class="kw-nav-btn" data-view="log"><span aria-hidden="true">📋</span> <span data-i18n="navLog">Activity log</span></button>
+        <button class="kw-nav-btn" data-view="about"><span aria-hidden="true">ℹ️</span> <span data-i18n="navAbout">About</span></button>
       </nav>
 
       <div class="kw-sidebar-foot">
         <label class="kw-row kw-master-row">
           <span>
-            <span class="kw-label">Master switch</span>
-            <p class="kw-hint">Off disables everything.</p>
+            <span class="kw-label" data-i18n="masterLabel">Master switch</span>
+            <p class="kw-hint" data-i18n="masterHint">Off disables everything.</p>
           </span>
           <span class="kw-switch">
-            <input type="checkbox" id="master" aria-label="Master switch" />
+            <input type="checkbox" id="master" data-i18n-aria="masterAriaOptions" aria-label="Master switch" />
             <span class="kw-track"></span>
             <span class="kw-knob"></span>
           </span>
@@ -46,14 +46,14 @@
 
       <!-- ---------- General ---------- -->
       <section class="kw-view" id="view-general" data-title="General">
-        <h2>General</h2>
-        <p class="kw-lead">Defaults applied to every site you enable. Each site can override them in <strong>Sites</strong>.</p>
+        <h2 data-i18n="generalTitle">General</h2>
+        <p class="kw-lead" data-i18n="generalLead">Defaults applied to every site you enable. Each site can override them in the Sites section.</p>
 
         <div class="kw-card">
-          <h3 class="kw-card-title">💓 Session heartbeat</h3>
-          <p class="kw-hint">Sends a background warm-up request to the site so servers don't expire your session while you're idle.</p>
+          <h3 class="kw-card-title" data-i18n="cardHeartbeat">💓 Session heartbeat</h3>
+          <p class="kw-hint" data-i18n="cardHeartbeatHint">Sends a background warm-up request to the site so servers don't expire your session while you're idle.</p>
           <div class="kw-row">
-            <span class="kw-label">Enable heartbeat</span>
+            <span class="kw-label" data-i18n="enableHeartbeat">Enable heartbeat</span>
             <span class="kw-switch">
               <input type="checkbox" id="g-heartbeat" data-key="heartbeat" />
               <span class="kw-track"></span><span class="kw-knob"></span>
@@ -61,44 +61,44 @@
           </div>
           <div class="kw-row">
             <span>
-              <span class="kw-label">Interval</span>
-              <p class="kw-hint">Every <span id="g-heartbeatIntervalSec-val">60</span>s</p>
+              <span class="kw-label" data-i18n="intervalLabelG">Interval</span>
+              <p class="kw-hint"><span id="g-heartbeatIntervalSec-val">Every 60s</span></p>
             </span>
             <span class="kw-inline-controls">
               <input type="range" id="g-heartbeatIntervalSec" data-key="heartbeatIntervalSec" min="15" max="1800" step="15" value="60" />
             </span>
           </div>
           <div class="kw-row">
-            <span class="kw-label">Request method</span>
+            <span class="kw-label" data-i18n="requestMethod">Request method</span>
             <select id="g-heartbeatMethod" data-key="heartbeatMethod">
-              <option value="head">HEAD (lightweight)</option>
-              <option value="get">GET (broad compatibility)</option>
+              <option value="head" data-i18n="methodHead">HEAD (lightweight)</option>
+              <option value="get" data-i18n="methodGet">GET (broad compatibility)</option>
             </select>
           </div>
         </div>
 
         <div class="kw-card">
-          <h3 class="kw-card-title">🖱️ Anti-idle activity</h3>
-          <p class="kw-hint">Simulates benign user activity inside the page so apps with "are you still there?" idle timers don't log you out.</p>
+          <h3 class="kw-card-title" data-i18n="cardActivity">🖱️ Anti-idle activity</h3>
+          <p class="kw-hint" data-i18n="cardActivityHint">Simulates benign user activity inside the page so apps with "are you still there?" idle timers don't log you out.</p>
           <div class="kw-row">
-            <span class="kw-label">Simulate activity</span>
+            <span class="kw-label" data-i18n="simulateLabel">Simulate activity</span>
             <span class="kw-switch">
               <input type="checkbox" id="g-activity" data-key="activity" />
               <span class="kw-track"></span><span class="kw-knob"></span>
             </span>
           </div>
           <div class="kw-row">
-            <span class="kw-label">Simulation mode</span>
+            <span class="kw-label" data-i18n="simulationMode">Simulation mode</span>
             <select id="g-activityMode" data-key="activityMode">
-              <option value="events">Pointer &amp; key events</option>
-              <option value="focus">Focus events only</option>
-              <option value="both">Both</option>
+              <option value="events" data-i18n="modeEvents">Pointer &amp; key events</option>
+              <option value="focus" data-i18n="modeFocus">Focus events only</option>
+              <option value="both" data-i18n="modeBoth">Both</option>
             </select>
           </div>
           <div class="kw-row">
             <span>
-              <span class="kw-label">Anti-discard sweep</span>
-              <p class="kw-hint">Discourages Brave's Memory Saver from freezing the tab.</p>
+              <span class="kw-label" data-i18n="antiDiscardLabel">Anti-discard sweep</span>
+              <p class="kw-hint" data-i18n="antiDiscardHint">Discourages Brave's Memory Saver from freezing the tab.</p>
             </span>
             <span class="kw-switch">
               <input type="checkbox" id="g-antiDiscard" data-key="antiDiscard" />
@@ -108,35 +108,35 @@
         </div>
 
         <div class="kw-card">
-          <h3 class="kw-card-title">🚑 Auto-reconnect</h3>
-          <p class="kw-hint">When a protected tab dies (error page, network drop, crash), Keurweb reloads it automatically.</p>
+          <h3 class="kw-card-title" data-i18n="cardReconnect">🚑 Auto-reconnect</h3>
+          <p class="kw-hint" data-i18n="cardReconnectHint">When a protected tab dies (error page, network drop, crash), Keurweb reloads it automatically.</p>
           <div class="kw-row">
-            <span class="kw-label">Reload dead tabs</span>
+            <span class="kw-label" data-i18n="reloadDeadTabs">Reload dead tabs</span>
             <span class="kw-switch">
               <input type="checkbox" id="g-autoReload" data-key="autoReload" />
               <span class="kw-track"></span><span class="kw-knob"></span>
             </span>
           </div>
           <div class="kw-row">
-            <span class="kw-label">Max attempts per tab</span>
+            <span class="kw-label" data-i18n="maxAttempts">Max attempts per tab</span>
             <input type="number" id="g-reloadMaxAttempts" data-key="reloadMaxAttempts" min="1" max="10" value="3" class="kw-num" />
           </div>
           <div class="kw-row">
             <span>
-              <span class="kw-label">Retry backoff base</span>
-              <p class="kw-hint">First retry after <span id="g-backoffBaseSec-val">5</span>s, doubling each attempt.</p>
+              <span class="kw-label" data-i18n="backoffLabel">Retry backoff base</span>
+              <p class="kw-hint"><span id="g-backoffBaseSec-val">First retry after 5s, doubling each attempt.</span></p>
             </span>
             <input type="number" id="g-backoffBaseSec" min="2" max="60" value="5" class="kw-num" />
           </div>
           <div class="kw-row">
             <span>
-              <span class="kw-label">Recovery budget</span>
-              <p class="kw-hint">Give up after <span id="g-budgetMin-val">30</span> min of failed retries.</p>
+              <span class="kw-label" data-i18n="budgetLabel">Recovery budget</span>
+              <p class="kw-hint"><span id="g-budgetMin-val">Give up after 30 min of failed retries.</span></p>
             </span>
             <input type="number" id="g-budgetMin" min="5" max="240" value="30" class="kw-num" />
           </div>
           <div class="kw-row">
-            <span class="kw-label">Notify when reconnecting</span>
+            <span class="kw-label" data-i18n="notifyOnReconnect">Notify when reconnecting</span>
             <span class="kw-switch">
               <input type="checkbox" id="g-notifyOnReload" data-key="notifyOnReload" />
               <span class="kw-track"></span><span class="kw-knob"></span>
@@ -145,12 +145,12 @@
         </div>
 
         <div class="kw-card">
-          <h3 class="kw-card-title">💾 Data</h3>
-          <p class="kw-hint">Back up your configuration or move it to another browser.</p>
+          <h3 class="kw-card-title" data-i18n="cardData">💾 Data</h3>
+          <p class="kw-hint" data-i18n="cardDataHint">Back up your configuration or move it to another browser.</p>
           <div class="kw-btn-row">
-            <button id="exportBtn">⬇️ Export settings</button>
-            <button id="importBtn">⬆️ Import settings</button>
-            <button id="resetBtn" class="btn-danger">🗑️ Reset everything</button>
+            <button id="exportBtn" data-i18n="exportSettingsBtn">⬇️ Export settings</button>
+            <button id="importBtn" data-i18n="importSettingsBtn">⬆️ Import settings</button>
+            <button id="resetBtn" class="btn-danger" data-i18n="resetAllBtn">🗑️ Reset everything</button>
             <input type="file" id="importFile" accept="application/json,.json" hidden />
           </div>
         </div>
@@ -158,58 +158,71 @@
 
       <!-- ---------- Sites ---------- -->
       <section class="kw-view" id="view-sites" data-title="Sites" hidden>
-        <h2>Sites</h2>
-        <p class="kw-lead">Keurweb protects <strong>only</strong> the sites you enable here (or via the popup / <kbd>Alt+Shift+K</kbd>).</p>
+        <h2 data-i18n="sitesTitle">Sites</h2>
+        <p class="kw-lead" data-i18n="sitesLead">Keurweb protects only the sites you enable here (or via the popup / Alt+Shift+K).</p>
 
         <div class="kw-card kw-add-site">
           <form id="addForm">
-            <input type="text" id="addInput" placeholder="example.com or https://app.example.com" autocomplete="off" spellcheck="false" aria-label="Site address" />
-            <button type="submit" class="btn-primary">＋ Add site</button>
+            <input type="text" id="addInput" data-i18n-ph="addPlaceholder" data-i18n-aria="addSiteAria" placeholder="example.com or *.example.com" autocomplete="off" spellcheck="false" aria-label="Site address" />
+            <button type="submit" class="btn-primary" data-i18n="addSiteBtn">＋ Add site</button>
           </form>
           <p class="kw-hint" id="addError" role="alert"></p>
+          <p class="kw-hint" data-i18n="wildcardTip">Tip: *.example.com protects the whole family — example.com and every subdomain.</p>
         </div>
 
         <div id="siteList" class="kw-site-list"></div>
 
         <div class="kw-card kw-empty" id="sitesEmpty" hidden>
-          <p><strong>No sites yet.</strong></p>
-          <p class="kw-hint">Add one above, or open any website and click the Keurweb toolbar icon → <em>Keep this site alive</em>.</p>
+          <p><strong data-i18n="sitesEmptyTitle">No sites yet.</strong></p>
+          <p class="kw-hint" data-i18n="sitesEmptyHint">Add one above, or open any website and click the Keurweb toolbar icon → Keep this site alive.</p>
         </div>
       </section>
 
       <!-- ---------- Activity log ---------- -->
       <section class="kw-view" id="view-log" data-title="Activity log" hidden>
         <div class="kw-view-head">
-          <h2>Activity log</h2>
-          <button id="clearLogBtn" class="btn-ghost">Clear</button>
+          <h2 data-i18n="logTitle">Activity log</h2>
+          <span class="kw-view-actions">
+            <button id="exportLogBtn" class="btn-ghost" data-i18n="exportLogBtn">Export log (JSON)</button>
+            <button id="clearLogBtn" class="btn-ghost" data-i18n="clearBtn">Clear</button>
+          </span>
         </div>
-        <p class="kw-lead">What Keurweb did recently. Newest first, up to 500 entries.</p>
+        <p class="kw-lead" data-i18n="logLead">What Keurweb did recently. Newest first, up to 500 entries.</p>
         <div class="kw-card kw-log-card">
           <ul id="logList" class="kw-log"></ul>
-          <p class="kw-empty" id="logEmpty" hidden>Nothing logged yet — enable a site and Keurweb will report here.</p>
+          <p class="kw-empty" id="logEmpty" data-i18n="logEmpty" hidden>Nothing logged yet — enable a site and Keurweb will report here.</p>
         </div>
       </section>
 
       <!-- ---------- About ---------- -->
       <section class="kw-view" id="view-about" data-title="About" hidden>
-        <h2>About</h2>
+        <h2 data-i18n="aboutTitle">About</h2>
         <div class="kw-card kw-about">
           <span class="kw-brandmark kw-brandmark-xl" aria-hidden="true"></span>
-          <h3>Keurweb — Keep Your Web</h3>
-          <p class="kw-version">Version <span id="version">1.0.0</span></p>
-          <p>Keurweb keeps your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs. All locally, with no data collection.</p>
+          <h3 data-i18n="aboutName">Keurweb — Keep Your Web</h3>
+          <p class="kw-version" id="version">Version 1.0.0</p>
+          <p data-i18n="aboutBlurb">Keurweb keeps your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs. All locally, with no data collection.</p>
           <ul class="kw-features">
-            <li>💓 Session heartbeats keep server sessions warm</li>
-            <li>🖱️ Anti-idle activity simulation</li>
-            <li>🧊 Anti-discard sweep for Brave's Memory Saver</li>
-            <li>🚑 Auto-reconnect with backoff for dead tabs</li>
-            <li>🌐 Per-site configuration with global defaults</li>
+            <li data-i18n="featureHeartbeat">💓 Session heartbeats keep server sessions warm</li>
+            <li data-i18n="featureActivity">🖱️ Anti-idle activity simulation</li>
+            <li data-i18n="featureAntiDiscard">🧊 Anti-discard sweep for Brave's Memory Saver</li>
+            <li data-i18n="featureReconnect">🚑 Auto-reconnect with backoff for dead tabs</li>
+            <li data-i18n="featurePerSite">🌐 Per-site configuration with global defaults</li>
+            <li data-i18n="featureWildcards">🌱 Subdomain rules — protect a whole site family at once</li>
           </ul>
-          <p class="kw-hint">Keyboard shortcut: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd> toggles the active site. Change it at <code>brave://settings/commands</code> (or <code>chrome://extensions/shortcuts</code>).</p>
           <p class="kw-hint">
-            Source &amp; issues:
+            <span data-i18n="shortcutLead">Keyboard shortcut:</span>
+            <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>K</kbd>
+            <span data-i18n="shortcutBody">toggles the active site. Change it at</span>
+            <code>brave://settings/commands</code>
+            <span data-i18n="shortcutOr">or</span>
+            <code>chrome://extensions/shortcuts</code>.
+          </p>
+          <p class="kw-hint" data-i18n="langsLine">Languages: English · Tiếng Việt (follows your browser language)</p>
+          <p class="kw-hint">
+            <span data-i18n="sourceLabel">Source &amp; issues:</span>
             <a href="https://github.com/coderunknow/Keurweb---Keep-Your-Web" target="_blank" rel="noreferrer">github.com/coderunknow/Keurweb---Keep-Your-Web</a>
-            · MIT License
+            · <span data-i18n="mitLicense">MIT License</span>
           </p>
         </div>
       </section>

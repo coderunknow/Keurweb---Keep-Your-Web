@@ -8,7 +8,7 @@ import {
   DEFAULT_SITE_BEHAVIOR,
   LIMITS,
   defaultSettings,
-  normalizeSiteKey,
+  normalizeSiteRule,
 } from './constants.js';
 
 const KNOWN_BEHAVIOR_KEYS = new Set(Object.keys(DEFAULT_SITE_BEHAVIOR));
@@ -25,6 +25,16 @@ function clampNum(value, { min, max }, fallback) {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(max, Math.max(min, n));
+}
+
+function nonNegInt(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? Math.trunc(n) : 0;
+}
+
+function nonNegNum(value) {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
 /**
@@ -83,10 +93,27 @@ export function normalizeSettings(raw) {
 
   if (src.sites && typeof src.sites === 'object' && !Array.isArray(src.sites)) {
     for (const [key, value] of Object.entries(src.sites)) {
-      const host = normalizeSiteKey(key);
-      if (!host) continue;
-      settings.sites[host] = normalizeBehavior(value);
-      settings.sites[host].enabled = value?.enabled === true;
+      const rule = normalizeSiteRule(key);
+      if (!rule) continue;
+      settings.sites[rule] = normalizeBehavior(value);
+      settings.sites[rule].enabled = value?.enabled === true;
+    }
+  }
+
+  if (src.stats && typeof src.stats === 'object' && !Array.isArray(src.stats)) {
+    let count = 0;
+    for (const [key, value] of Object.entries(src.stats)) {
+      const rule = normalizeSiteRule(key);
+      if (!rule || !(value && typeof value === 'object')) continue;
+      if (count >= LIMITS.maxManagedTabs) break; // bound the map
+      settings.stats[rule] = {
+        heartbeats: nonNegInt(value.heartbeats),
+        recoveries: nonNegInt(value.recoveries),
+        lastHeartbeatAt: nonNegNum(value.lastHeartbeatAt),
+        lastDisconnectAt: nonNegNum(value.lastDisconnectAt),
+        lastRecoverAt: nonNegNum(value.lastRecoverAt),
+      };
+      count += 1;
     }
   }
 
@@ -103,13 +130,25 @@ export function normalizeSettings(raw) {
 
   if (Array.isArray(src.log)) {
     settings.log = src.log
-      .filter((e) => e && typeof e === 'object' && typeof e.message === 'string')
-      .slice(-LIMITS.maxLogEntries)
-      .map((e) => ({
-        ts: Number.isFinite(e.ts) ? e.ts : Date.now(),
-        level: e.level === 'warn' || e.level === 'error' ? e.level : 'info',
-        message: String(e.message).slice(0, 300),
-      }));
+      .filter((e) => e && typeof e === 'object')
+      .map((e) => {
+        const base = {
+          ts: Number.isFinite(e.ts) ? e.ts : Date.now(),
+          level: e.level === 'warn' || e.level === 'error' ? e.level : 'info',
+        };
+        // v1.1+ entries carry an i18n key + substitutions.
+        if (typeof e.key === 'string' && e.key) {
+          const params = Array.isArray(e.params) ? e.params.slice(0, 10) : [];
+          return { ...base, key: e.key.slice(0, 100), params: params.map((p) => String(p).slice(0, 100)) };
+        }
+        // Legacy v1.0 entries keep their pre-formatted message.
+        if (typeof e.message === 'string' && e.message) {
+          return { ...base, message: e.message.slice(0, 300) };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .slice(-LIMITS.maxLogEntries);
   }
 
   return settings;

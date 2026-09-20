@@ -48,11 +48,79 @@ test('normalizeSettings drops invalid sites and log entries', () => {
   assert.equal(typeof s.log[1].ts, 'number');
 });
 
+test('normalizeSettings accepts wildcard rule keys and drops over-broad ones', () => {
+  const s = normalizeSettings({
+    sites: {
+      'https://App.Example.com/': { enabled: true },
+      '*.Sub.Example.com': { enabled: true, heartbeatIntervalSec: 120 },
+      '*.com': { enabled: true },
+      '*': { enabled: true },
+    },
+  });
+  assert.deepEqual(Object.keys(s.sites).sort(), ['*.sub.example.com', 'app.example.com']);
+  assert.equal(s.sites['*.sub.example.com'].heartbeatIntervalSec, 120);
+  assert.equal(s.sites['*.sub.example.com'].enabled, true);
+});
+
 test('normalizeSettings caps the log length', () => {
   const log = Array.from({ length: LIMITS.maxLogEntries + 100 }, (_, i) => ({ ts: i, message: `m${i}` }));
   const s = normalizeSettings({ log });
   assert.equal(s.log.length, LIMITS.maxLogEntries);
   assert.equal(s.log.at(-1).message, `m${LIMITS.maxLogEntries + 99}`);
+});
+
+test('normalizeSettings keeps structured log entries (i18n key + params) and legacy entries', () => {
+  const s = normalizeSettings({
+    log: [
+      { ts: 1, level: 'warn', key: 'logReloadScheduled', params: ['a.b', 'network', 10, 1, 3] },
+      { ts: 2, message: 'legacy prose entry' },
+      { ts: 3, key: 'not-a-real-key' },
+      { ts: 4, key: 'logRecovered', params: ['a.b', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+      { ts: 5 },
+    ],
+  });
+  // Structurally valid entries (including unknown keys — the pure core
+  // cannot know locale contents) are kept; empty entries are dropped.
+  assert.equal(s.log.length, 4);
+  assert.deepEqual(s.log[0].params, ['a.b', 'network', '10', '1', '3'], 'params coerced to strings');
+  assert.equal(s.log[1].message, 'legacy prose entry');
+  assert.equal(s.log[2].key, 'not-a-real-key');
+  assert.deepEqual(s.log[2].params, []);
+  assert.deepEqual(s.log[3].params.length, 10, 'params capped at 10');
+});
+
+test('normalizeSettings validates per-rule stats', () => {
+  const s = normalizeSettings({
+    stats: {
+      'https://app.example.com/': {
+        heartbeats: 41.9,
+        recoveries: -3,
+        lastHeartbeatAt: 1234,
+        lastDisconnectAt: 'nope',
+        lastRecoverAt: 5678,
+        bogus: true,
+      },
+      '*.com': { heartbeats: 99 },
+      'not a rule': { heartbeats: 1 },
+    },
+  });
+  assert.deepEqual(Object.keys(s.stats), ['app.example.com']);
+  const st = s.stats['app.example.com'];
+  assert.equal(st.heartbeats, 41, 'counters truncated to integers');
+  assert.equal(st.recoveries, 0, 'negative counters floored to 0');
+  assert.equal(st.lastHeartbeatAt, 1234);
+  assert.equal(st.lastDisconnectAt, 0, 'bad timestamps become 0 (unset)');
+  assert.equal(st.lastRecoverAt, 5678);
+  assert.equal('bogus' in st, false);
+  // missing stats → empty map, defaults intact
+  assert.deepEqual(normalizeSettings({}).stats, {});
+});
+
+test('normalizeSettings caps the stats map', () => {
+  const stats = {};
+  for (let i = 0; i < LIMITS.maxManagedTabs + 50; i++) stats[`site${i}.example.com`] = { heartbeats: 1 };
+  const s = normalizeSettings({ stats });
+  assert.equal(Object.keys(s.stats).length, LIMITS.maxManagedTabs);
 });
 
 test('memoryStorage stores and removes', async () => {

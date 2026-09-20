@@ -67,9 +67,16 @@ export class KeepAliveEngine {
     return this.log.slice(-LIMITS.maxLogEntries);
   }
 
-  /** @private */
-  push(level, message) {
-    this.log.push({ ts: this.now(), level, message });
+  /**
+   * Records a structured log entry. Entries store an i18n message key plus
+   * substitutions (the UI renders them via chrome.i18n); no UI code paths
+   * depend on pre-formatted prose, so the pure core stays translation-free.
+   * @param {'info'|'warn'|'error'} level
+   * @param {string} key chrome.i18n message key
+   * @param {Array<string|number>} [params] $1…$n substitutions
+   */
+  push(level, key, params = []) {
+    this.log.push({ ts: this.now(), level, key, params: params.map(String) });
     if (this.log.length > LIMITS.maxLogEntries) {
       this.log.splice(0, this.log.length - LIMITS.maxLogEntries);
     }
@@ -77,6 +84,29 @@ export class KeepAliveEngine {
 
   clearLog() {
     this.log = [];
+  }
+
+  /**
+   * @private
+   * Mutates settings.stats[rule] in place; the worker persists the tree
+   * after the call. Pure: no I/O, no browser APIs.
+   */
+  bumpStat(settings, rule, patch) {
+    if (!rule || !settings?.stats || typeof settings.stats !== 'object') return;
+    const cur =
+      settings.stats[rule] ??
+      (settings.stats[rule] = {
+        heartbeats: 0,
+        recoveries: 0,
+        lastHeartbeatAt: 0,
+        lastDisconnectAt: 0,
+        lastRecoverAt: 0,
+      });
+    if (patch.heartbeats) cur.heartbeats += patch.heartbeats;
+    if (patch.recoveries) cur.recoveries += patch.recoveries;
+    for (const field of ['lastHeartbeatAt', 'lastDisconnectAt', 'lastRecoverAt']) {
+      if (patch[field]) cur[field] = patch[field];
+    }
   }
 
   // ------------------------------------------------------------- lifecycle
@@ -124,7 +154,7 @@ export class KeepAliveEngine {
     if (!shouldProtect(settings, url)) {
       return [{ kind: 'badge', tabId, state: settings.masterEnabled ? 'site-off' : 'global-off' }];
     }
-    this.push('info', `Tracking ${host} (tab ${tabId})`);
+    this.push('info', 'logTracking', [host, tabId]);
     return [
       { kind: 'badge', tabId, state: 'protected' },
       { kind: 'inject', tabId, host, url },
@@ -134,7 +164,7 @@ export class KeepAliveEngine {
   /** Stops tracking a tab. @returns {Intent[]} */
   untrackTab(tabId) {
     const rec = this.tabs.get(tabId);
-    if (rec) this.push('info', `Stopped tracking ${rec.host} (tab ${tabId} closed)`);
+    if (rec) this.push('info', 'logUntracked', [rec.host, tabId]);
     this.tabs.delete(tabId);
     this.reloadAttemptLog.delete(tabId);
     return [];
@@ -177,14 +207,21 @@ export class KeepAliveEngine {
     for (const tab of this.tabs.values()) {
       const url = tab.url;
       if (!shouldProtect(settings, url)) continue;
-      const { behavior } = resolveBehavior(settings, tab.host);
+      const { behavior, rule } = resolveBehavior(settings, tab.host);
 
       // 1. Server heartbeat — direct warm-up ping from the worker.
       if (behavior.heartbeat) {
         const intervalMs = behavior.heartbeatIntervalSec * 1000;
         if (t - tab.lastHeartbeatAt >= intervalMs) {
           tab.lastHeartbeatAt = t;
-          intents.push({ kind: 'ping', tabId: tab.tabId, host: tab.host, url });
+          this.bumpStat(settings, rule, { heartbeats: 1, lastHeartbeatAt: t });
+          intents.push({
+            kind: 'ping',
+            tabId: tab.tabId,
+            host: tab.host,
+            url,
+            method: behavior.heartbeatMethod.toUpperCase(),
+          });
         }
       }
 
@@ -246,7 +283,7 @@ export class KeepAliveEngine {
     }
 
     if (!canAttemptReload(tab.recovery, behavior.reloadMaxAttempts, settings.recovery.budgetMin, t)) {
-      this.push('error', `Giving up on ${tab.host} (tab ${tabId}) — recovery budget exhausted (will retry in 5 min)`);
+      this.push('error', 'logSurrendered', [tab.host, tabId]);
       tab.recovery = null;
       this.surrendered.set(tabId, t);
       return [{ kind: 'badge', tabId, state: 'site-off' }];
@@ -255,22 +292,23 @@ export class KeepAliveEngine {
     tab.recovery.attempts += 1;
     tab.recovery.lastAttemptAt = t;
 
+    const { rule } = resolveBehavior(settings, tab.host);
+    this.bumpStat(settings, rule, { lastDisconnectAt: t });
+
     const delays = this.reloadAttemptLog.get(tabId) ?? [];
     delays.push(t);
     this.reloadAttemptLog.set(tabId, delays);
 
     const delaySec = reloadDelaySec(tab.recovery.attempts, settings.recovery.backoffBaseSec);
-    this.push(
-      'warn',
-      `${tab.host} disconnected (${detail.kind ?? 'unknown'}${detail.status ? ` ${detail.status}` : ''}) — reloading in ${delaySec}s (attempt ${tab.recovery.attempts}/${behavior.reloadMaxAttempts})`,
-    );
+    const reason = detail.status ? `${detail.kind ?? 'unknown'} ${detail.status}` : detail.kind ?? 'unknown';
+    this.push('warn', 'logReloadScheduled', [tab.host, reason, delaySec, tab.recovery.attempts, behavior.reloadMaxAttempts]);
 
     const intents = [
       { kind: 'reload', tabId, host: tab.host, url: tab.url, delayMs: delaySec * 1000 },
       { kind: 'badge', tabId, state: 'recovering' },
     ];
     if (behavior.notifyOnReload && tab.recovery.attempts === 1) {
-      intents.push({ kind: 'notify', message: `Keurweb: ${tab.host} disconnected — reconnecting…` });
+      intents.push({ kind: 'notify', titleKey: 'notifyTitle', messageKey: 'notifyReconnect', messageParams: [tab.host] });
     }
     return intents;
   }
@@ -289,14 +327,59 @@ export class KeepAliveEngine {
     }
   }
 
-  /** Called after a tab successfully finished loading again. @returns {Intent[]} */
-  noteRecovered(tabId) {
+  /**
+   * Called after a tab successfully finished loading again.
+   * @param {number} tabId
+   * @param {object} [settings] normalized settings — when given, the
+   *   site's recovery counters are updated.
+   * @returns {Intent[]}
+   */
+  noteRecovered(tabId, settings) {
     const tab = this.tabs.get(tabId);
     if (tab?.recovery) {
-      this.push('info', `${tab.host} recovered after ${tab.recovery.attempts} attempt(s)`);
+      this.push('info', 'logRecovered', [tab.host, tab.recovery.attempts]);
+      if (settings) {
+        const { rule } = resolveBehavior(settings, tab.host);
+        this.bumpStat(settings, rule, { recoveries: 1, lastRecoverAt: this.now() });
+      }
       tab.recovery = null;
     }
     return [{ kind: 'badge', tabId, state: 'protected' }];
+  }
+
+  /**
+   * Manual "ping now" from the popup. Works for tracked tabs and for
+   * protected-but-untracked URLs (e.g. right after a worker restart);
+   * counted toward the site's heartbeat stats.
+   * @param {number} tabId
+   * @param {object} settings normalized settings
+   * @param {string} [url] the popup's active tab URL (fallback target)
+   * @returns {Intent[]}
+   */
+  pingNow(tabId, settings, url) {
+    const tab = this.tabs.get(tabId);
+    let host = '';
+    let targetUrl = '';
+    // The caller's URL (the popup's active tab) is authoritative; fall back
+    // to the tracked record only when no URL was provided.
+    if (url && shouldProtect(settings, url)) {
+      try {
+        host = new URL(url).hostname.toLowerCase();
+        targetUrl = url;
+      } catch {
+        host = '';
+      }
+    }
+    if (!targetUrl && tab && shouldProtect(settings, tab.url)) {
+      host = tab.host;
+      targetUrl = tab.url;
+    }
+    if (!targetUrl) return [];
+    const t = this.now();
+    if (tab && tab.url === targetUrl) tab.lastHeartbeatAt = t;
+    const { rule, behavior } = resolveBehavior(settings, host);
+    this.bumpStat(settings, rule, { heartbeats: 1, lastHeartbeatAt: t });
+    return [{ kind: 'ping', tabId, host, url: targetUrl, method: behavior.heartbeatMethod.toUpperCase() }];
   }
 
   // -------------------------------------------------------------- queries
@@ -307,7 +390,7 @@ export class KeepAliveEngine {
    * @param {string} url the popup's active tab URL
    */
   describeSite(settings, url) {
-    const { behavior, source, siteEnabled } = resolveBehavior(settings, url);
+    const { behavior, source, siteEnabled, rule, viaWildcard } = resolveBehavior(settings, url);
     let host = '';
     try {
       host = new URL(url).hostname.toLowerCase();
@@ -323,7 +406,10 @@ export class KeepAliveEngine {
       masterEnabled: settings.masterEnabled,
       source,
       siteEnabled,
+      rule,
+      viaWildcard,
       behavior,
+      stats: rule ? settings.stats?.[rule] ?? null : null,
       tracked: Boolean(tab),
       recovering: Boolean(tab?.recovery),
       secondsSinceHeartbeat: tab && tab.lastHeartbeatAt ? Math.round((t - tab.lastHeartbeatAt) / 1000) : null,

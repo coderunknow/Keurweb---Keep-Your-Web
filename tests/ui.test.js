@@ -74,3 +74,16 @@ test('manifest icon files exist and are non-empty PNGs', () => {
     assert.deepEqual([...buf.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], `${file} not a PNG`);
   }
 });
+
+test("options: hydrate does not re-bind general-form listeners", () => {
+  const js = read("options/options.js");
+  const m = js.match(/async function hydrate\(\) \{[\s\S]*?\n\}/);
+  assert.ok(m, "hydrate() exists");
+  assert.doesNotMatch(m[0], /bindBehaviorControls\(/, "re-binding on hydrate double-fires after import/reset");
+});
+
+test("options: deep-link to a site card uses querySelector, not getElementById", () => {
+  const js = read("options/options.js");
+  assert.match(js, /querySelector\(`\[data-host-card=/);
+  assert.doesNotMatch(js, /\$\(`\[data-host-card=/);
+});

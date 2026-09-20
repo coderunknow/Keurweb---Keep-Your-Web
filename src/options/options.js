@@ -4,8 +4,20 @@
  * service worker (SETTINGS_CHANGED) so open tabs re-evaluate immediately.
  */
 
-import { ALL_BEHAVIOR_KEYS, LIMITS, MSG, defaultSettings, normalizeSiteKey } from '../shared/constants.js';
+import {
+  ALL_BEHAVIOR_KEYS,
+  LIMITS,
+  MSG,
+  apexHostOfRule,
+  defaultSettings,
+  isWildcardRule,
+  normalizeSiteRule,
+} from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
+import { applyI18n, fmtNum, t } from '../ui/i18n.js';
+
+applyI18n();
+document.title = t('pageTitle');
 
 const store = new SettingsStore(chrome.storage.local);
 const $ = (id) => document.getElementById(id);
@@ -25,6 +37,7 @@ const els = {
   importBtn: $('importBtn'),
   importFile: $('importFile'),
   resetBtn: $('resetBtn'),
+  exportLogBtn: $('exportLogBtn'),
   toast: $('toast'),
   version: $('version'),
 };
@@ -61,15 +74,8 @@ const saveRecovery = () =>
     return s;
   });
 
-/** Notifies the worker that behavior for one site changed. */
-const saveSite = (host) =>
-  persist((s) => {
-    s.sites[host] = settings.sites[host];
-    return s;
-  });
-
-function letterIcon(host) {
-  const letter = (host || '?').charAt(0).toUpperCase();
+function letterIcon(rule) {
+  const letter = (apexHostOfRule(rule) || '?').charAt(0).toUpperCase();
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="8" fill="#4f46e5"/><text x="16" y="21" font-family="system-ui,sans-serif" font-size="16" font-weight="700" fill="#fff" text-anchor="middle">${letter}</text></svg>`;
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
@@ -104,12 +110,13 @@ function syncBehaviorControls() {
     else input.value = String(settings.defaults[key] ?? '');
     reflectDependent(key);
   }
-  for (const [id, key, format] of [
-    ['g-backoffBaseSec', 'backoffBaseSec', (v) => `${v}s`],
-    ['g-budgetMin', 'budgetMin', (v) => `${v} min`],
+  $('g-heartbeatIntervalSec-val').textContent = t('everySec', settings.defaults.heartbeatIntervalSec);
+  for (const [id, key, keyHint] of [
+    ['g-backoffBaseSec', 'backoffBaseSec', 'backoffHint'],
+    ['g-budgetMin', 'budgetMin', 'budgetHint'],
   ]) {
     $(id).value = String(settings.recovery[key]);
-    $(`${id}-val`).textContent = format(settings.recovery[key]);
+    $(`${id}-val`).textContent = t(keyHint, settings.recovery[key]);
   }
 }
 
@@ -123,29 +130,28 @@ function bindBehaviorControls() {
       settings.defaults = { ...settings.defaults, [key]: value };
       await saveDefaults();
       reflectDependent(key);
-      toast('Saved');
+      toast(t('saved'));
     });
     if (input.type === 'range') {
       input.addEventListener('input', () => {
-        $(`g-${key}-val`).textContent = input.value;
+        $(`g-${key}-val`).textContent = t('everySec', input.value);
       });
     }
   }
 
-  for (const [id, key] of [
-    ['g-backoffBaseSec', 'backoffBaseSec'],
-    ['g-budgetMin', 'budgetMin'],
+  for (const [id, key, hintKey] of [
+    ['g-backoffBaseSec', 'backoffBaseSec', 'backoffHint'],
+    ['g-budgetMin', 'budgetMin', 'budgetHint'],
   ]) {
     const input = $(id);
-    const format = (v) => (key === 'budgetMin' ? `${v} min` : `${v}s`);
     input.addEventListener('change', async () => {
       const limits = LIMITS[id === 'g-budgetMin' ? 'reloadBudgetMin' : 'reloadBackoffBaseSec'];
       const n = Math.min(limits.max, Math.max(limits.min, Number(input.value) || limits.min));
       input.value = String(n);
       settings.recovery = { ...settings.recovery, [key]: n };
-      $(`${id}-val`).textContent = format(n);
+      $(`${id}-val`).textContent = t(hintKey, n);
       await saveRecovery();
-      toast('Saved');
+      toast(t('saved'));
     });
   }
 }
@@ -162,58 +168,86 @@ function reflectDependent(key) {
     if (control) control.disabled = $(`g-${key}`)?.checked === false;
   }
   if (key === 'heartbeatIntervalSec') {
-    $('g-heartbeatIntervalSec-val').textContent = $('g-heartbeatIntervalSec').value;
+    $('g-heartbeatIntervalSec-val').textContent = t('everySec', $('g-heartbeatIntervalSec').value);
   }
 }
 
 // -------------------------------------------------------------------- sites
 
-function behaviorRow(label, hint, controlHtml, extra = '') {
-  return `<div class="kw-row" ${extra}>
+function behaviorRow(label, hint, controlHtml) {
+  return `<div class="kw-row">
     <span><span class="kw-label">${label}</span>${hint ? `<p class="kw-hint">${hint}</p>` : ''}</span>
     ${controlHtml}
   </div>`;
 }
 
-function switchHtml(id, checked, dataKey) {
-  return `<span class="kw-switch"><input type="checkbox" id="${id}" ${checked ? 'checked' : ''} data-site-key="${dataKey}"><span class="kw-track"></span><span class="kw-knob"></span></span>`;
+function switchHtml(checked, dataKey) {
+  return `<span class="kw-switch"><input type="checkbox" ${checked ? 'checked' : ''} data-site-key="${dataKey}"><span class="kw-track"></span><span class="kw-knob"></span></span>`;
 }
 
-function siteDetailHtml(host) {
-  const site = settings.sites[host] ?? {};
+/**
+ * Builds the expandable per-site control panel.
+ * The template only interpolates validated numbers and static, localized
+ * strings — rule keys are attached via setAttribute, never as HTML.
+ */
+function buildSiteDetail(rule) {
+  const site = settings.sites[rule] ?? {};
   const b = { ...settings.defaults, ...site };
   const usingDefaults = ALL_BEHAVIOR_KEYS.every((k) => !(k in site));
   const interval = b.heartbeatIntervalSec ?? 60;
+  const stats = settings.stats?.[rule];
+  const hasStats =
+    stats && (stats.heartbeats > 0 || stats.recoveries > 0 || stats.lastDisconnectAt > 0 || stats.lastRecoverAt > 0);
+  const fmtTs = (ts) => (ts ? new Date(ts).toLocaleString() : '—');
+  const statsHtml = `
+    <div class="kw-stats">
+      <span class="kw-label">${t('statsLabel')}</span>
+      <span>${
+        hasStats
+          ? t('statsNoLast', fmtNum(stats.heartbeats), fmtNum(stats.recoveries))
+          : t('statsEmpty')
+      }</span>
+      <span>${t('lastDisconnect', fmtTs(stats?.lastDisconnectAt))}</span>
+      <span>${t('lastRecover', fmtTs(stats?.lastRecoverAt))}</span>
+      <div class="kw-btn-row">
+        <button class="btn-ghost" data-reset-stats>${t('resetStatsBtn')}</button>
+      </div>
+    </div>`;
   const rows = [
-    behaviorRow('Session heartbeat', 'Warm-up ping to keep the session alive', switchHtml(`s-${host}-heartbeat`, b.heartbeat !== false, 'heartbeat')),
-    behaviorRow('Heartbeat interval', `Every <span data-site-val="${host}:heartbeatIntervalSec">${interval}</span>s`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec" data-site-host="${host}">`),
-    behaviorRow('Anti-idle activity', 'Simulated user activity', switchHtml(`s-${host}-activity`, b.activity !== false, 'activity')),
-    behaviorRow('Anti-discard sweep', 'Discourages tab freezing', switchHtml(`s-${host}-antiDiscard`, b.antiDiscard !== false, 'antiDiscard')),
-    behaviorRow('Auto-reconnect', 'Reload the tab when it dies', switchHtml(`s-${host}-autoReload`, b.autoReload !== false, 'autoReload')),
-    behaviorRow('Notify when reconnecting', '', switchHtml(`s-${host}-notifyOnReload`, b.notifyOnReload === true, 'notifyOnReload')),
+    behaviorRow(t('rowHeartbeat'), t('rowHeartbeatHint'), switchHtml(b.heartbeat !== false, 'heartbeat')),
+    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    behaviorRow(t('rowActivity'), t('rowActivityHint'), switchHtml(b.activity !== false, 'activity')),
+    behaviorRow(t('rowAntiDiscard'), t('rowAntiDiscardHint'), switchHtml(b.antiDiscard !== false, 'antiDiscard')),
+    behaviorRow(t('rowAutoReload'), t('rowAutoReloadHint'), switchHtml(b.autoReload !== false, 'autoReload')),
+    behaviorRow(t('rowNotify'), '', switchHtml(b.notifyOnReload === true, 'notifyOnReload')),
   ].join('');
-  return `<div class="kw-site-detail" data-detail="${host}">
-    ${usingDefaults ? `<p class="kw-site-using-default">Using global defaults — customize below.</p>` : ''}
+  const wrap = document.createElement('div');
+  wrap.className = 'kw-site-detail';
+  wrap.dataset.detail = rule;
+  wrap.innerHTML = `
+    ${usingDefaults ? `<p class="kw-site-using-default">${t('usingDefaults')}</p>` : ''}
     ${rows}
+    ${statsHtml}
     <div class="kw-btn-row">
-      <button class="btn-ghost" data-reset-site="${host}">↺ Reset to defaults</button>
-    </div>
-  </div>`;
+      <button class="btn-ghost" data-reset-site>${t('resetSiteBtn')}</button>
+    </div>`;
+  return wrap;
 }
 
 function renderSites() {
-  const hosts = Object.keys(settings.sites).sort();
-  els.siteCount.textContent = hosts.length ? String(hosts.length) : '';
-  els.sitesEmpty.hidden = hosts.length > 0;
+  const rules = Object.keys(settings.sites).sort();
+  els.siteCount.textContent = rules.length ? String(rules.length) : '';
+  els.sitesEmpty.hidden = rules.length > 0;
   els.siteList.textContent = '';
 
-  for (const host of hosts) {
-    const site = settings.sites[host];
+  for (const rule of rules) {
+    const site = settings.sites[rule];
     const enabled = site?.enabled === true;
+    const wildcard = isWildcardRule(rule);
 
     const card = document.createElement('div');
     card.className = 'kw-card kw-site-item';
-    card.dataset.hostCard = host;
+    card.dataset.hostCard = rule;
 
     const head = document.createElement('div');
     head.className = 'kw-site-item-head';
@@ -225,36 +259,45 @@ function renderSites() {
     icon.height = 26;
     icon.onerror = () => {
       icon.onerror = null;
-      icon.src = letterIcon(host);
+      icon.src = letterIcon(rule);
     };
-    icon.src = `${chrome.runtime.getURL('/_favicon/')}?pageUrl=${encodeURIComponent(`https://${host}/`)}&size=32`;
+    icon.src = `${chrome.runtime.getURL('/_favicon/')}?pageUrl=${encodeURIComponent(`https://${apexHostOfRule(rule)}/`)}&size=32`;
 
     const name = document.createElement('span');
     name.className = 'kw-site-host';
-    name.textContent = host; // textContent — never inject hostnames as HTML
+    name.textContent = rule; // textContent — never inject rule keys as HTML
+
+    if (wildcard) {
+      const chip = document.createElement('span');
+      chip.className = 'kw-chip';
+      chip.textContent = t('chipSubdomains');
+      head.append(icon, name, chip);
+    } else {
+      head.append(icon, name);
+    }
 
     const customize = document.createElement('button');
     customize.className = 'btn-ghost';
-    customize.textContent = expandedSites.has(host) ? 'Hide options ▲' : 'Customize ▼';
+    customize.textContent = expandedSites.has(rule) ? t('hideBtn') : t('customizeBtn');
     customize.addEventListener('click', () => {
-      expandedSites.has(host) ? expandedSites.delete(host) : expandedSites.add(host);
+      expandedSites.has(rule) ? expandedSites.delete(rule) : expandedSites.add(rule);
       renderSites();
     });
 
     const label = document.createElement('label');
     label.className = 'kw-switch';
-    label.title = enabled ? 'Protection on' : 'Protection off';
+    label.title = enabled ? t('protectionOn') : t('protectionOff');
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = enabled;
-    input.setAttribute('aria-label', `Protect ${host}`);
+    input.setAttribute('aria-label', t('protectAria', rule));
     input.addEventListener('change', async () => {
       await persist((s) => {
-        if (!s.sites[host]) s.sites[host] = {};
-        s.sites[host].enabled = input.checked;
+        if (!s.sites[rule]) s.sites[rule] = {};
+        s.sites[rule].enabled = input.checked;
         return s;
       });
-      toast(input.checked ? `Protecting ${host}` : `${host} paused`);
+      toast(input.checked ? t('protecting', rule) : t('paused', rule));
       renderSites();
     });
     const track = document.createElement('span');
@@ -265,22 +308,23 @@ function renderSites() {
 
     const remove = document.createElement('button');
     remove.className = 'btn-ghost btn-danger';
-    remove.textContent = 'Remove';
-    remove.title = `Stop managing ${host}`;
+    remove.textContent = t('removeBtn');
+    remove.title = t('removeTitle', rule);
     remove.addEventListener('click', async () => {
-      if (!confirm(`Remove ${host} from Keurweb?`)) return;
+      if (!confirm(t('removeConfirm', rule))) return;
       await persist((s) => {
-        delete s.sites[host];
+        delete s.sites[rule];
+        delete s.stats[rule];
         return s;
       });
-      toast(`${host} removed`);
+      toast(t('removed', rule));
       renderSites();
     });
 
-    head.append(icon, name, customize, label, remove);
+    head.append(customize, label, remove);
     card.append(head);
-    if (expandedSites.has(host)) {
-      card.append(buildSiteDetail(host));
+    if (expandedSites.has(rule)) {
+      card.append(buildSiteDetail(rule));
     }
     els.siteList.append(card);
   }
@@ -290,29 +334,47 @@ function renderSites() {
 
 function bindSiteDetailEvents() {
   for (const input of els.siteList.querySelectorAll('[data-site-key]')) {
-    const host = input.dataset.siteHost ?? input.closest('[data-detail]')?.dataset.detail;
+    const rule = input.closest('[data-detail]')?.dataset.detail;
     const key = input.dataset.siteKey;
-    if (!host || !key) continue;
+    if (!rule || !key) continue;
     input.addEventListener('change', async () => {
       const value = input.type === 'checkbox' ? input.checked : Number(input.value);
       await persist((s) => {
-        if (!s.sites[host]) s.sites[host] = { enabled: true };
-        s.sites[host][key] = value;
+        if (!s.sites[rule]) s.sites[rule] = { enabled: true };
+        s.sites[rule][key] = value;
         return s;
       });
-      toast('Saved');
+      if (key === 'heartbeatIntervalSec') {
+        const hint = input.closest('.kw-row')?.querySelector('[data-hint]');
+        if (hint) hint.textContent = t('everySec', value);
+      }
+      toast(t('saved'));
+    });
+  }
+
+  for (const btn of els.siteList.querySelectorAll('[data-reset-stats]')) {
+    const rule = btn.closest('[data-detail]')?.dataset.detail;
+    if (!rule) continue;
+    btn.addEventListener('click', async () => {
+      await persist((s) => {
+        delete s.stats[rule];
+        return s;
+      });
+      toast(t('statsReset'));
+      renderSites();
     });
   }
 
   for (const btn of els.siteList.querySelectorAll('[data-reset-site]')) {
-    const host = btn.dataset.resetSite;
+    const rule = btn.closest('[data-detail]')?.dataset.detail;
+    if (!rule) continue;
     btn.addEventListener('click', async () => {
       await persist((s) => {
-        const enabled = s.sites[host]?.enabled === true;
-        s.sites[host] = { ...(enabled ? { enabled: true } : {}) };
+        const enabled = s.sites[rule]?.enabled === true;
+        s.sites[rule] = { ...(enabled ? { enabled: true } : {}) };
         return s;
       });
-      toast(`${host} reset to defaults`);
+      toast(t('resetToDefaults', rule));
       renderSites();
     });
   }
@@ -320,28 +382,28 @@ function bindSiteDetailEvents() {
 
 els.addForm.addEventListener('submit', async (event) => {
   event.preventDefault();
-  const host = normalizeSiteKey(els.addInput.value);
-  if (!host) {
-    els.addError.textContent = 'That doesn’t look like a website address. Try example.com';
+  const rule = normalizeSiteRule(els.addInput.value);
+  if (!rule) {
+    els.addError.textContent = t('addErrorInvalid');
     els.addError.classList.add('error');
     return;
   }
-  if (settings.sites[host]) {
-    els.addError.textContent = `${host} is already in your list.`;
+  if (settings.sites[rule]) {
+    els.addError.textContent = t('addErrorExists', rule);
     els.addError.classList.add('error');
-    expandedSites.add(host);
+    expandedSites.add(rule);
     renderSites();
     return;
   }
   els.addError.textContent = '';
   els.addError.classList.remove('error');
   await persist((s) => {
-    s.sites[host] = { enabled: true };
+    s.sites[rule] = { enabled: true };
     return s;
   });
   els.addInput.value = '';
-  expandedSites.add(host);
-  toast(`Now protecting ${host}`);
+  expandedSites.add(rule);
+  toast(t('nowProtecting', rule));
   renderSites();
 });
 
@@ -368,7 +430,8 @@ async function refreshLog() {
     lv.title = entry.level;
     lv.textContent = LEVEL_ICON[entry.level] ?? '●';
     const msg = document.createElement('span');
-    msg.textContent = entry.message;
+    // v1.1+ entries carry an i18n key; legacy entries keep prose.
+    msg.textContent = entry.message ?? (t(entry.key, ...entry.params) || entry.key);
     li.append(time, lv, msg);
     els.logList.append(li);
   }
@@ -379,11 +442,29 @@ els.clearLogBtn.addEventListener('click', async () => {
   refreshLog();
 });
 
+els.exportLogBtn.addEventListener('click', async () => {
+  const res = await chrome.runtime.sendMessage({ type: MSG.GET_LOG }).catch(() => null);
+  const log = Array.isArray(res?.log) ? res.log : [];
+  const payload = JSON.stringify(
+    { kind: 'keurweb-log', version: 1, exportedAt: new Date().toISOString(), log },
+    null,
+    2,
+  );
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `keurweb-log-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(t('logExported'));
+});
+
 // --------------------------------------------------------------------- data
 
 els.exportBtn.addEventListener('click', async () => {
   const res = await chrome.runtime.sendMessage({ type: MSG.EXPORT_SETTINGS }).catch(() => null);
-  if (!res?.payload) return toast('Export failed');
+  if (!res?.payload) return toast(t('exportFailed'));
   const blob = new Blob([res.payload], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -391,7 +472,7 @@ els.exportBtn.addEventListener('click', async () => {
   a.download = `keurweb-settings-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('Settings exported');
+  toast(t('exported'));
 });
 
 els.importBtn.addEventListener('click', () => els.importFile.click());
@@ -402,18 +483,18 @@ els.importFile.addEventListener('change', async () => {
   const payload = await file.text();
   const res = await chrome.runtime.sendMessage({ type: MSG.IMPORT_SETTINGS, payload }).catch(() => null);
   if (res?.error) {
-    toast(`Import failed: ${res.error}`);
+    toast(t('importFailed', res.error));
   } else {
-    toast('Settings imported');
+    toast(t('imported'));
     await hydrate();
   }
   els.importFile.value = '';
 });
 
 els.resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset ALL Keurweb settings and sites? This cannot be undone.')) return;
+  if (!confirm(t('resetConfirm'))) return;
   await chrome.runtime.sendMessage({ type: MSG.RESET_SETTINGS }).catch(() => {});
-  toast('Everything reset');
+  toast(t('everythingReset'));
   await hydrate();
 });
 
@@ -424,7 +505,7 @@ els.master.addEventListener('change', async () => {
     s.masterEnabled = els.master.checked;
     return s;
   });
-  toast(els.master.checked ? 'Keurweb is on' : 'Keurweb paused everywhere');
+  toast(els.master.checked ? t('masterOn') : t('masterPaused'));
 });
 
 // -------------------------------------------------------------------- boot
@@ -432,11 +513,15 @@ els.master.addEventListener('change', async () => {
 async function hydrate() {
   settings = await store.load();
   els.master.checked = settings.masterEnabled;
-  bindBehaviorControls();
+  syncBehaviorControls();
   renderSites();
 }
 
-els.version.textContent = chrome.runtime.getManifest().version;
+// One-shot: hydrate() also runs after import/reset, so binding inside it
+// would duplicate every General-form listener.
+bindBehaviorControls();
+
+els.version.textContent = t('aboutVersion', chrome.runtime.getManifest().version);
 
 const params = new URLSearchParams(location.search);
 const preselect = params.get('site');
@@ -445,14 +530,16 @@ const hashView = location.hash.replace('#', '');
 hydrate().then(() => {
   show(VIEWS.includes(hashView) ? hashView : 'general');
   if (preselect) {
-    const host = normalizeSiteKey(preselect);
-    if (host && settings.sites[host]) {
-      expandedSites.add(host);
+    const rule = normalizeSiteRule(preselect);
+    if (rule && settings.sites[rule]) {
+      expandedSites.add(rule);
       show('sites');
       renderSites();
-      $(`[data-host-card="${CSS.escape(host)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (host) {
-      els.addInput.value = host;
+      document
+        .querySelector(`[data-host-card="${CSS.escape(rule)}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } else if (rule) {
+      els.addInput.value = rule;
       show('sites');
       els.addInput.focus();
     }
