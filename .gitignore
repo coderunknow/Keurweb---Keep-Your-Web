@@ -1,0 +1,17 @@
+# Dependencies (none required — kept for safety if contributors add tooling)
+node_modules/
+
+# Build artifacts
+dist/
+*.zip
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+npm-debug.log*

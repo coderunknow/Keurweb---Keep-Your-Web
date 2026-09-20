@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "Keurweb — Keep Your Web",
+  "short_name": "Keurweb",
+  "version": "1.0.0",
+  "description": "Keep your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs.",
+  "author": "coderunknow",
+  "homepage_url": "https://github.com/coderunknow/Keurweb---Keep-Your-Web",
+  "icons": {
+    "16": "assets/icons/icon16.png",
+    "32": "assets/icons/icon32.png",
+    "48": "assets/icons/icon48.png",
+    "128": "assets/icons/icon128.png"
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "tabs",
+    "scripting",
+    "notifications",
+    "favicon"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background/serviceWorker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Keurweb — Keep Your Web",
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icons/icon16.png",
+      "32": "assets/icons/icon32.png",
+      "48": "assets/icons/icon48.png",
+      "128": "assets/icons/icon128.png"
+    }
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "commands": {
+    "toggle-for-active-tab": {
+      "suggested_key": {
+        "default": "Alt+Shift+K"
+      },
+      "description": "Toggle Keurweb for the active tab's site"
+    }
+  }
+}

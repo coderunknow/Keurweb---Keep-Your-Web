@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Keurweb</title>
+  <link rel="stylesheet" href="../assets/base.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="kw-header">
+    <div class="kw-title">
+      <span class="kw-brandmark" aria-hidden="true"></span>
+      <h1>Keurweb</h1>
+    </div>
+    <label class="kw-switch" title="Master switch — protects only sites you enabled">
+      <input type="checkbox" id="master" aria-label="Keurweb master switch" />
+      <span class="kw-track"></span>
+      <span class="kw-knob"></span>
+    </label>
+  </header>
+
+  <main>
+    <!-- Unsupported page (chrome://, new tab, ...) -->
+    <section class="kw-card kw-notice" id="unsupported" hidden>
+      <p><strong>Nothing to protect here.</strong></p>
+      <p class="kw-hint">Open a regular website (https://…), then use this popup to keep it alive.</p>
+      <button class="btn-primary" id="openOptionsFromUnsupported">Open settings</button>
+    </section>
+
+    <!-- Site panel -->
+    <section id="sitePanel" hidden>
+      <div class="kw-card kw-site-head">
+        <div class="kw-site-id">
+          <img id="favicon" class="kw-favicon" alt="" width="28" height="28" />
+          <div class="kw-site-name">
+            <span id="host" class="kw-host">…</span>
+            <span id="statusLine" class="kw-status-line">…</span>
+          </div>
+        </div>
+        <span id="statusBadge" class="kw-badge muted"><span class="kw-dot"></span><span id="statusText">…</span></span>
+      </div>
+
+      <div class="kw-card kw-controls">
+        <button class="btn-primary kw-keep-btn" id="toggleBtn">Keep this site alive</button>
+
+        <div id="siteSettings" hidden>
+          <div class="kw-field">
+            <label class="kw-label" for="interval">
+              Heartbeat every <span id="intervalValue" class="kw-val">60</span>s
+            </label>
+            <input type="range" id="interval" min="15" max="600" step="5" value="60" />
+            <p class="kw-hint">Sends a background warm-up ping so servers don't expire your session.</p>
+          </div>
+
+          <div class="kw-field kw-inline">
+            <label class="kw-check">
+              <input type="checkbox" id="autoReload" checked />
+              <span>Auto-reconnect if the tab dies</span>
+            </label>
+            <span id="attemptsWrap">up to
+              <select id="attempts" aria-label="Maximum reconnect attempts">
+                <option value="1">1×</option>
+                <option value="2">2×</option>
+                <option value="3" selected>3×</option>
+                <option value="5">5×</option>
+                <option value="10">10×</option>
+              </select>
+            </span>
+          </div>
+
+          <div class="kw-field kw-inline">
+            <label class="kw-check">
+              <input type="checkbox" id="activity" checked />
+              <span>Simulate activity (anti-idle)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="kw-actions">
+          <button class="btn-ghost" id="refreshNow" title="Send a keep-alive ping right now">⟳ Refresh now</button>
+          <button class="btn-ghost" id="advanced">Site settings →</button>
+        </div>
+      </div>
+
+      <p id="masterNote" class="kw-master-note" hidden>
+        ⚠️ The master switch is off — turn it on to protect this site.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <span id="footerText">Keurweb keeps your web alive.</span>
+    <button class="btn-ghost" id="openOptions" title="Open full settings">Settings</button>
+  </footer>
+
+  <script src="popup.js" type="module"></script>
+</body>
+</html>

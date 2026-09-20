@@ -1,0 +1,378 @@
+/* Keurweb options page — layout on top of the shared tokens in base.css */
+
+body {
+  background: var(--kw-bg);
+}
+
+.kw-shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  max-width: 980px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+
+/* Sidebar ----------------------------------------------------------------- */
+.kw-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 14px;
+  border-right: 1px solid var(--kw-border);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.kw-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+}
+
+.kw-brandmark-lg {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+}
+
+.kw-brand h1 {
+  font-size: 17px;
+}
+
+.kw-tagline {
+  margin: 0;
+  font-size: 12px;
+  color: var(--kw-muted);
+  background: var(--kw-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 600;
+}
+
+.kw-sidebar nav {
+  display: grid;
+  gap: 4px;
+}
+
+.kw-nav-btn {
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 9px 12px;
+  border-radius: var(--kw-radius-sm);
+  color: var(--kw-text-soft);
+  font-weight: 550;
+}
+
+.kw-nav-btn:hover {
+  background: var(--kw-surface-2);
+  color: var(--kw-text);
+}
+
+.kw-nav-btn.active {
+  background: color-mix(in srgb, var(--kw-accent) 12%, transparent);
+  color: var(--kw-accent);
+}
+
+.kw-count {
+  background: var(--kw-surface-2);
+  border-radius: 999px;
+  font-size: 11px;
+  padding: 1px 8px;
+  margin-left: 4px;
+  color: var(--kw-muted);
+}
+
+.kw-sidebar-foot {
+  margin-top: auto;
+}
+
+.kw-master-row {
+  border: 1px solid var(--kw-border);
+  border-radius: var(--kw-radius);
+  padding: 10px;
+  background: var(--kw-surface);
+}
+
+/* Content ------------------------------------------------------------------ */
+.kw-content {
+  padding: 28px 34px 60px;
+  min-width: 0;
+}
+
+.kw-view h2 {
+  font-size: 22px;
+  margin-bottom: 4px;
+}
+
+.kw-lead {
+  color: var(--kw-muted);
+  margin: 0 0 18px;
+}
+
+.kw-card {
+  margin-bottom: 14px;
+  max-width: 640px;
+}
+
+.kw-card-title {
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.kw-inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 55%;
+}
+
+.kw-inline-controls input[type='range'] {
+  width: 100%;
+}
+
+.kw-num {
+  width: 90px;
+  text-align: center;
+}
+
+.kw-btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+kbd {
+  background: var(--kw-surface-2);
+  border: 1px solid var(--kw-border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-family: var(--kw-mono);
+  font-size: 11.5px;
+}
+
+code {
+  font-family: var(--kw-mono);
+  font-size: 12px;
+  background: var(--kw-surface-2);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* Sites ------------------------------------------------------------------- */
+.kw-add-site form {
+  display: flex;
+  gap: 8px;
+}
+
+.kw-add-site input[type='text'] {
+  flex: 1;
+}
+
+.kw-add-site .kw-hint {
+  margin: 8px 2px 0;
+  min-height: 1em;
+}
+
+.kw-add-site .kw-hint.error {
+  color: var(--kw-err);
+}
+
+.kw-site-list {
+  display: grid;
+  gap: 10px;
+  max-width: 640px;
+}
+
+.kw-site-item {
+  padding: 0;
+  overflow: hidden;
+}
+
+.kw-site-item-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.kw-site-item-head .kw-favicon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--kw-surface-2);
+}
+
+.kw-site-host {
+  font-weight: 650;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kw-site-item-head .btn-ghost {
+  padding: 4px 8px;
+  font-size: 12.5px;
+}
+
+.kw-site-detail {
+  border-top: 1px solid var(--kw-border);
+  background: var(--kw-surface-2);
+  padding: 4px 14px 10px;
+}
+
+.kw-site-detail .kw-row {
+  border-color: color-mix(in srgb, var(--kw-border) 60%, transparent);
+}
+
+.kw-site-using-default {
+  color: var(--kw-muted);
+  font-size: 12.5px;
+  padding: 8px 2px 2px;
+}
+
+/* Log --------------------------------------------------------------------- */
+.kw-view-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 640px;
+}
+
+.kw-log-card {
+  max-height: 60vh;
+  overflow: auto;
+}
+
+.kw-log {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.kw-log li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 6px 4px;
+  border-bottom: 1px solid color-mix(in srgb, var(--kw-border) 55%, transparent);
+  font-size: 13px;
+}
+
+.kw-log li:last-child {
+  border-bottom: none;
+}
+
+.kw-log time {
+  color: var(--kw-muted);
+  font-family: var(--kw-mono);
+  font-size: 11.5px;
+  flex: none;
+}
+
+.kw-log .kw-lv {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.kw-lv.info {
+  background: var(--kw-ok);
+}
+
+.kw-lv.warn {
+  background: var(--kw-warn);
+}
+
+.kw-lv.error {
+  background: var(--kw-err);
+}
+
+/* About -------------------------------------------------------------------- */
+.kw-about {
+  text-align: center;
+  padding: 26px;
+}
+
+.kw-brandmark-xl {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-bottom: 10px;
+}
+
+.kw-version {
+  color: var(--kw-muted);
+  font-size: 13px;
+  margin-top: -6px;
+}
+
+.kw-features {
+  display: inline-grid;
+  gap: 6px;
+  text-align: left;
+  list-style: none;
+  padding: 0;
+  margin: 14px 0;
+}
+
+.kw-empty {
+  text-align: center;
+  color: var(--kw-muted);
+  padding: 22px;
+}
+
+/* Toast -------------------------------------------------------------------- */
+.kw-toast {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--kw-text);
+  color: var(--kw-bg);
+  padding: 9px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  box-shadow: var(--kw-shadow);
+  z-index: 50;
+}
+
+/* Responsive --------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .kw-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .kw-sidebar {
+    position: static;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    border-right: none;
+    border-bottom: 1px solid var(--kw-border);
+  }
+
+  .kw-sidebar nav {
+    grid-auto-flow: column;
+  }
+
+  .kw-sidebar-foot {
+    margin: 0 0 0 auto;
+  }
+
+  .kw-content {
+    padding: 20px 16px 40px;
+  }
+}

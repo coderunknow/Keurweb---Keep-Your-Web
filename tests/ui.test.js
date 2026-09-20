@@ -1,0 +1,76 @@
+/**
+ * UI consistency checks: every element id referenced from popup/options JS
+ * must exist in the corresponding HTML, and every relative asset referenced
+ * from HTML must resolve to a real file. Catches broken UIs before release.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const src = resolve(root, 'src');
+
+const read = (p) => readFileSync(resolve(src, p), 'utf8');
+
+test('popup: every id used by popup.js exists in popup.html', () => {
+  const html = read('popup/popup.html');
+  const js = read('popup/popup.js');
+  const htmlIds = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+  const used = new Set([...js.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]));
+  const missing = [...used].filter((id) => !htmlIds.has(id));
+  assert.deepEqual(missing, [], `popup.js references missing ids: ${missing.join(', ')}`);
+});
+
+test('options: every id used by options.js exists in options.html', () => {
+  const html = read('options/options.html');
+  const js = read('options/options.js');
+  const htmlIds = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+  const used = new Set([...js.matchAll(/\$\('([^']+)'\)/g)].map((m) => m[1]));
+  const missing = [...used].filter((id) => !htmlIds.has(id));
+  assert.deepEqual(missing, [], `options.js references missing ids: ${missing.join(', ')}`);
+});
+
+test('options: dynamically composed ids also exist', () => {
+  // options.js builds ids like `g-${key}-val` from range data-key attributes.
+  const html = read('options/options.html');
+  const htmlIds = new Set([...html.matchAll(/id="([^"]+)"/g)].map((m) => m[1]));
+  const inputs = [...html.matchAll(/<input[^>]*type="range"[^>]*>/g)].map((m) => m[0]);
+  for (const tag of inputs) {
+    const key = tag.match(/data-key="([^"]+)"/)?.[1];
+    if (!key) continue;
+    assert.ok(htmlIds.has(`g-${key}`), `range input for ${key} should have id g-${key}`);
+    assert.ok(htmlIds.has(`g-${key}-val`), `range input g-${key} needs a g-${key}-val hint element`);
+  }
+  assert.ok(inputs.length >= 1, 'expected at least one range input in the General form');
+});
+
+test('all relative href/src references in extension HTML resolve', () => {
+  for (const page of ['popup/popup.html', 'options/options.html']) {
+    const dir = dirname(resolve(src, page));
+    const html = read(page);
+    const refs = [...html.matchAll(/(?:href|src)="([^"#]+)"/g)].map((m) => m[1]);
+    for (const ref of refs) {
+      if (/^(https?:|data:|chrome)/.test(ref)) continue;
+      assert.ok(existsSync(resolve(dir, ref)), `${page} references missing file: ${ref}`);
+    }
+  }
+});
+
+test('extension pages declare charset and module scripts load as modules', () => {
+  for (const page of ['popup/popup.html', 'options/options.html']) {
+    const html = read(page);
+    assert.match(html, /<meta charset="utf-8"/i, `${page} missing charset`);
+    assert.match(html, /type="module"/, `${page} should load its script as a module`);
+  }
+});
+
+test('manifest icon files exist and are non-empty PNGs', () => {
+  const manifest = JSON.parse(readFileSync(resolve(src, 'manifest.json'), 'utf8'));
+  for (const file of Object.values(manifest.icons)) {
+    const buf = readFileSync(resolve(src, file));
+    assert.ok(buf.length > 100, `${file} too small`);
+    assert.deepEqual([...buf.subarray(0, 8)], [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], `${file} not a PNG`);
+  }
+});
