@@ -376,3 +376,43 @@ code {
     padding: 20px 16px 40px;
   }
 }
+
+/* Wildcard chip ----------------------------------------------------------- */
+.kw-chip {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kw-accent);
+  background: color-mix(in srgb, var(--kw-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--kw-accent) 25%, transparent);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+/* Log view header actions -------------------------------------------------- */
+.kw-view-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Site stats block ---------------------------------------------------------- */
+.kw-stats {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--kw-border);
+  border-radius: var(--kw-radius-sm);
+  background: var(--kw-surface);
+  font-size: 12.5px;
+  color: var(--kw-text-soft);
+  display: grid;
+  gap: 4px;
+}
+
+.kw-stats .kw-label {
+  font-weight: 650;
+  color: var(--kw-text);
+}
+
+.kw-stats .kw-row {
+  padding: 2px 0;
+}

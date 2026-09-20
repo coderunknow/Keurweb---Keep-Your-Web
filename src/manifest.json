@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "Keurweb — Keep Your Web",
+  "name": "__MSG_appName__",
   "short_name": "Keurweb",
+  "default_locale": "en",
   "version": "1.0.0",
-  "description": "Keep your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs.",
+  "description": "__MSG_appDescription__",
   "author": "coderunknow",
   "homepage_url": "https://github.com/coderunknow/Keurweb---Keep-Your-Web",
   "icons": {
@@ -20,13 +21,15 @@
     "notifications",
     "favicon"
   ],
-  "host_permissions": ["<all_urls>"],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background/serviceWorker.js",
     "type": "module"
   },
   "action": {
-    "default_title": "Keurweb — Keep Your Web",
+    "default_title": "__MSG_actionTitle__",
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "assets/icons/icon16.png",
@@ -44,7 +47,7 @@
       "suggested_key": {
         "default": "Alt+Shift+K"
       },
-      "description": "Toggle Keurweb for the active tab's site"
+      "description": "__MSG_commandToggleDesc__"
     }
   }
 }

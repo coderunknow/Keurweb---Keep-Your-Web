@@ -4,6 +4,7 @@
  */
 
 import { MSG } from '../shared/constants.js';
+import { applyI18n, t } from '../ui/i18n.js';
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -26,6 +27,8 @@ const els = {
   refreshNow: $('refreshNow'),
   advanced: $('advanced'),
   masterNote: $('masterNote'),
+  statsLine: $('statsLine'),
+  viaLine: $('viaLine'),
   footerText: $('footerText'),
   openOptions: $('openOptions'),
   openOptionsFromUnsupported: $('openOptionsFromUnsupported'),
@@ -64,15 +67,15 @@ function setBadge(kind, text) {
 function fmtCountdown(totalSec) {
   if (totalSec == null) return '';
   const sec = Math.max(0, totalSec);
-  if (sec >= 90) return `${Math.round(sec / 60)}m`;
-  return `${sec}s`;
+  if (sec >= 90) return t('durMinutes', String(Math.round(sec / 60)));
+  return t('durSeconds', String(sec));
 }
 
 function render() {
   if (!pageUrl) {
     els.unsupported.hidden = false;
     els.sitePanel.hidden = true;
-    els.footerText.textContent = 'Master switch applies to all sites.';
+    els.footerText.textContent = t('footerUnsupported');
     return;
   }
 
@@ -95,30 +98,35 @@ function render() {
   els.masterNote.hidden = snap.masterEnabled !== false;
 
   els.toggleBtn.classList.toggle('on', on);
-  els.toggleBtn.textContent = on ? '✓ Keeping this site alive' : 'Keep this site alive';
+  els.toggleBtn.textContent = on ? t('keepingAlive') : t('keepAlive');
   els.siteSettings.hidden = !on;
   els.toggleBtn.disabled = snap.masterEnabled === false;
 
+  // Protection via a wildcard rule gets a small "via *.example.com" note.
+  const via = on && snap.viaWildcard && snap.rule;
+  els.viaLine.hidden = !via;
+  if (via) els.viaLine.textContent = t('wildcardVia', snap.rule);
+
   if (recovering) {
-    setBadge('err', 'Reconnecting…');
-    els.statusLine.textContent = 'Tab lost — Keurweb is restoring it.';
+    setBadge('err', t('statusReconnecting'));
+    els.statusLine.textContent = t('statusReconnectingLine');
   } else if (!snap.masterEnabled) {
-    setBadge('warn', 'Master off');
-    els.statusLine.textContent = 'Turn on the master switch to activate.';
+    setBadge('warn', t('statusMasterOff'));
+    els.statusLine.textContent = t('statusMasterOffLine');
   } else if (!on) {
-    setBadge('muted', 'Not protected');
-    els.statusLine.textContent = 'This site is idle — enable keep-alive below.';
+    setBadge('muted', t('statusNotProtected'));
+    els.statusLine.textContent = t('statusNotProtectedLine');
   } else {
-    setBadge('ok', 'Protected');
+    setBadge('ok', t('statusProtected'));
     const next = nextHeartbeatSeconds();
     els.statusLine.textContent =
-      next == null ? 'Heartbeat active.' : `Next heartbeat in ${fmtCountdown(next)}`;
+      next == null ? t('statusHeartbeatActive') : t('statusNextHeartbeat', fmtCountdown(next));
   }
 
   // per-site controls reflect effective behavior
   const b = snap.behavior ?? {};
   els.interval.value = b.heartbeatIntervalSec ?? 60;
-  els.intervalValue.textContent = String(els.interval.value);
+  els.intervalValue.textContent = t('intervalLabel', els.interval.value);
   els.autoReload.checked = b.autoReload !== false;
   els.attempts.value = String(b.reloadMaxAttempts ?? 3);
   els.attemptsWrap.hidden = !els.autoReload.checked;
@@ -166,7 +174,7 @@ els.toggleBtn.addEventListener('click', async () => {
 });
 
 els.interval.addEventListener('input', () => {
-  els.intervalValue.textContent = els.interval.value;
+  els.intervalValue.textContent = t('intervalLabel', els.interval.value);
 });
 
 els.interval.addEventListener('change', () => {
@@ -192,10 +200,13 @@ els.refreshNow.addEventListener('click', async () => {
     await send({ type: MSG.KEEPALIVE_NOW });
     await new Promise((r) => setTimeout(r, 350));
   } finally {
-    els.refreshNow.textContent = '⟳ Refresh now';
+    els.refreshNow.textContent = t('refreshNow');
     refresh();
   }
 });
+
+applyI18n();
+document.title = t('popupTitle');
 
 const openOptionsAt = (query) => {
   const url = chrome.runtime.getURL(`options/options.html${query}`);

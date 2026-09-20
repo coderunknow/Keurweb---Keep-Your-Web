@@ -10,10 +10,10 @@
   <header class="kw-header">
     <div class="kw-title">
       <span class="kw-brandmark" aria-hidden="true"></span>
-      <h1>Keurweb</h1>
+      <h1 data-i18n="popupTitle">Keurweb</h1>
     </div>
-    <label class="kw-switch" title="Master switch — protects only sites you enabled">
-      <input type="checkbox" id="master" aria-label="Keurweb master switch" />
+    <label class="kw-switch" data-i18n-title="masterTitle">
+      <input type="checkbox" id="master" data-i18n-aria="masterAria" aria-label="Keurweb master switch" />
       <span class="kw-track"></span>
       <span class="kw-knob"></span>
     </label>
@@ -22,9 +22,9 @@
   <main>
     <!-- Unsupported page (chrome://, new tab, ...) -->
     <section class="kw-card kw-notice" id="unsupported" hidden>
-      <p><strong>Nothing to protect here.</strong></p>
-      <p class="kw-hint">Open a regular website (https://…), then use this popup to keep it alive.</p>
-      <button class="btn-primary" id="openOptionsFromUnsupported">Open settings</button>
+      <p><strong data-i18n="nothingTitle">Nothing to protect here.</strong></p>
+      <p class="kw-hint" data-i18n="nothingHint">Open a regular website (https://…), then use this popup to keep it alive.</p>
+      <button class="btn-primary" id="openOptionsFromUnsupported" data-i18n="openSettings">Open settings</button>
     </section>
 
     <!-- Site panel -->
@@ -35,30 +35,32 @@
           <div class="kw-site-name">
             <span id="host" class="kw-host">…</span>
             <span id="statusLine" class="kw-status-line">…</span>
+            <span id="viaLine" class="kw-via-line" hidden></span>
           </div>
         </div>
         <span id="statusBadge" class="kw-badge muted"><span class="kw-dot"></span><span id="statusText">…</span></span>
       </div>
 
       <div class="kw-card kw-controls">
-        <button class="btn-primary kw-keep-btn" id="toggleBtn">Keep this site alive</button>
+        <button class="btn-primary kw-keep-btn" id="toggleBtn" data-i18n="keepAlive">Keep this site alive</button>
+        <p id="statsLine" class="kw-stats-line" hidden></p>
 
         <div id="siteSettings" hidden>
           <div class="kw-field">
             <label class="kw-label" for="interval">
-              Heartbeat every <span id="intervalValue" class="kw-val">60</span>s
+              <span id="intervalValue" class="kw-val" data-i18n="intervalLabel">Heartbeat every 60s</span>
             </label>
             <input type="range" id="interval" min="15" max="600" step="5" value="60" />
-            <p class="kw-hint">Sends a background warm-up ping so servers don't expire your session.</p>
+            <p class="kw-hint" data-i18n="intervalHint">Sends a background warm-up ping so servers don't expire your session.</p>
           </div>
 
           <div class="kw-field kw-inline">
             <label class="kw-check">
               <input type="checkbox" id="autoReload" checked />
-              <span>Auto-reconnect if the tab dies</span>
+              <span data-i18n="autoReconnect">Auto-reconnect if the tab dies</span>
             </label>
-            <span id="attemptsWrap">up to
-              <select id="attempts" aria-label="Maximum reconnect attempts">
+            <span id="attemptsWrap"><span id="attemptsPrefix" data-i18n="attemptsPrefix">up to</span>
+              <select id="attempts" data-i18n-aria="attemptsAria" aria-label="Maximum reconnect attempts">
                 <option value="1">1×</option>
                 <option value="2">2×</option>
                 <option value="3" selected>3×</option>
@@ -71,26 +73,26 @@
           <div class="kw-field kw-inline">
             <label class="kw-check">
               <input type="checkbox" id="activity" checked />
-              <span>Simulate activity (anti-idle)</span>
+              <span data-i18n="simulateActivity">Simulate activity (anti-idle)</span>
             </label>
           </div>
         </div>
 
         <div class="kw-actions">
-          <button class="btn-ghost" id="refreshNow" title="Send a keep-alive ping right now">⟳ Refresh now</button>
-          <button class="btn-ghost" id="advanced">Site settings →</button>
+          <button class="btn-ghost" id="refreshNow" data-i18n="refreshNow" data-i18n-title="refreshNowTitle" title="Send a keep-alive ping right now">⟳ Refresh now</button>
+          <button class="btn-ghost" id="advanced" data-i18n="siteSettings">Site settings →</button>
         </div>
       </div>
 
-      <p id="masterNote" class="kw-master-note" hidden>
+      <p id="masterNote" class="kw-master-note" data-i18n="masterNote" hidden>
         ⚠️ The master switch is off — turn it on to protect this site.
       </p>
     </section>
   </main>
 
   <footer>
-    <span id="footerText">Keurweb keeps your web alive.</span>
-    <button class="btn-ghost" id="openOptions" title="Open full settings">Settings</button>
+    <span id="footerText" data-i18n="footerDefault">Keurweb keeps your web alive.</span>
+    <button class="btn-ghost" id="openOptions" data-i18n="settings" title="Open full settings">Settings</button>
   </footer>
 
   <script src="popup.js" type="module"></script>

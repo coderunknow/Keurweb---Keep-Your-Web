@@ -69,6 +69,26 @@ test('normalizeSettings caps the log length', () => {
   assert.equal(s.log.at(-1).message, `m${LIMITS.maxLogEntries + 99}`);
 });
 
+test('normalizeSettings keeps structured log entries (i18n key + params) and legacy entries', () => {
+  const s = normalizeSettings({
+    log: [
+      { ts: 1, level: 'warn', key: 'logReloadScheduled', params: ['a.b', 'network', 10, 1, 3] },
+      { ts: 2, message: 'legacy prose entry' },
+      { ts: 3, key: 'not-a-real-key' },
+      { ts: 4, key: 'logRecovered', params: ['a.b', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+      { ts: 5 },
+    ],
+  });
+  // Structurally valid entries (including unknown keys — the pure core
+  // cannot know locale contents) are kept; empty entries are dropped.
+  assert.equal(s.log.length, 4);
+  assert.deepEqual(s.log[0].params, ['a.b', 'network', '10', '1', '3'], 'params coerced to strings');
+  assert.equal(s.log[1].message, 'legacy prose entry');
+  assert.equal(s.log[2].key, 'not-a-real-key');
+  assert.deepEqual(s.log[2].params, []);
+  assert.deepEqual(s.log[3].params.length, 10, 'params capped at 10');
+});
+
 test('memoryStorage stores and removes', async () => {
   const storage = memoryStorage();
   await storage.set({ a: 1, b: 2 });

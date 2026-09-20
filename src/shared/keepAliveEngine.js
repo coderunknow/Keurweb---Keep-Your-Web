@@ -67,9 +67,16 @@ export class KeepAliveEngine {
     return this.log.slice(-LIMITS.maxLogEntries);
   }
 
-  /** @private */
-  push(level, message) {
-    this.log.push({ ts: this.now(), level, message });
+  /**
+   * Records a structured log entry. Entries store an i18n message key plus
+   * substitutions (the UI renders them via chrome.i18n); no UI code paths
+   * depend on pre-formatted prose, so the pure core stays translation-free.
+   * @param {'info'|'warn'|'error'} level
+   * @param {string} key chrome.i18n message key
+   * @param {Array<string|number>} [params] $1…$n substitutions
+   */
+  push(level, key, params = []) {
+    this.log.push({ ts: this.now(), level, key, params: params.map(String) });
     if (this.log.length > LIMITS.maxLogEntries) {
       this.log.splice(0, this.log.length - LIMITS.maxLogEntries);
     }
@@ -124,7 +131,7 @@ export class KeepAliveEngine {
     if (!shouldProtect(settings, url)) {
       return [{ kind: 'badge', tabId, state: settings.masterEnabled ? 'site-off' : 'global-off' }];
     }
-    this.push('info', `Tracking ${host} (tab ${tabId})`);
+    this.push('info', 'logTracking', [host, tabId]);
     return [
       { kind: 'badge', tabId, state: 'protected' },
       { kind: 'inject', tabId, host, url },
@@ -134,7 +141,7 @@ export class KeepAliveEngine {
   /** Stops tracking a tab. @returns {Intent[]} */
   untrackTab(tabId) {
     const rec = this.tabs.get(tabId);
-    if (rec) this.push('info', `Stopped tracking ${rec.host} (tab ${tabId} closed)`);
+    if (rec) this.push('info', 'logUntracked', [rec.host, tabId]);
     this.tabs.delete(tabId);
     this.reloadAttemptLog.delete(tabId);
     return [];
@@ -184,7 +191,13 @@ export class KeepAliveEngine {
         const intervalMs = behavior.heartbeatIntervalSec * 1000;
         if (t - tab.lastHeartbeatAt >= intervalMs) {
           tab.lastHeartbeatAt = t;
-          intents.push({ kind: 'ping', tabId: tab.tabId, host: tab.host, url });
+          intents.push({
+            kind: 'ping',
+            tabId: tab.tabId,
+            host: tab.host,
+            url,
+            method: behavior.heartbeatMethod.toUpperCase(),
+          });
         }
       }
 
@@ -246,7 +259,7 @@ export class KeepAliveEngine {
     }
 
     if (!canAttemptReload(tab.recovery, behavior.reloadMaxAttempts, settings.recovery.budgetMin, t)) {
-      this.push('error', `Giving up on ${tab.host} (tab ${tabId}) — recovery budget exhausted (will retry in 5 min)`);
+      this.push('error', 'logSurrendered', [tab.host, tabId]);
       tab.recovery = null;
       this.surrendered.set(tabId, t);
       return [{ kind: 'badge', tabId, state: 'site-off' }];
@@ -260,17 +273,15 @@ export class KeepAliveEngine {
     this.reloadAttemptLog.set(tabId, delays);
 
     const delaySec = reloadDelaySec(tab.recovery.attempts, settings.recovery.backoffBaseSec);
-    this.push(
-      'warn',
-      `${tab.host} disconnected (${detail.kind ?? 'unknown'}${detail.status ? ` ${detail.status}` : ''}) — reloading in ${delaySec}s (attempt ${tab.recovery.attempts}/${behavior.reloadMaxAttempts})`,
-    );
+    const reason = detail.status ? `${detail.kind ?? 'unknown'} ${detail.status}` : detail.kind ?? 'unknown';
+    this.push('warn', 'logReloadScheduled', [tab.host, reason, delaySec, tab.recovery.attempts, behavior.reloadMaxAttempts]);
 
     const intents = [
       { kind: 'reload', tabId, host: tab.host, url: tab.url, delayMs: delaySec * 1000 },
       { kind: 'badge', tabId, state: 'recovering' },
     ];
     if (behavior.notifyOnReload && tab.recovery.attempts === 1) {
-      intents.push({ kind: 'notify', message: `Keurweb: ${tab.host} disconnected — reconnecting…` });
+      intents.push({ kind: 'notify', titleKey: 'notifyTitle', messageKey: 'notifyReconnect', messageParams: [tab.host] });
     }
     return intents;
   }
@@ -293,7 +304,7 @@ export class KeepAliveEngine {
   noteRecovered(tabId) {
     const tab = this.tabs.get(tabId);
     if (tab?.recovery) {
-      this.push('info', `${tab.host} recovered after ${tab.recovery.attempts} attempt(s)`);
+      this.push('info', 'logRecovered', [tab.host, tab.recovery.attempts]);
       tab.recovery = null;
     }
     return [{ kind: 'badge', tabId, state: 'protected' }];

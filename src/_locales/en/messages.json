@@ -1,0 +1,234 @@
+{
+  "appName": { "message": "Keurweb — Keep Your Web", "description": "Extension display name (manifest name)." },
+  "appDescription": {
+    "message": "Keep your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs.",
+    "description": "Extension description (manifest)."
+  },
+  "actionTitle": { "message": "Keurweb — Keep Your Web", "description": "Toolbar icon tooltip." },
+  "commandToggleDesc": { "message": "Toggle Keurweb for the active tab's site", "description": "Keyboard shortcut description." },
+
+  "badgeDefault": { "message": "Keurweb", "description": "Default tab badge tooltip." },
+  "badgeProtected": { "message": "Keurweb: protecting this site", "description": "Tab badge tooltip while protecting." },
+  "badgeRecovering": { "message": "Keurweb: recovering this tab", "description": "Tab badge tooltip while reconnecting." },
+  "badgeGlobalOff": { "message": "Keurweb: master switch is off", "description": "Tab badge tooltip when the master switch is off." },
+  "badgeSiteOff": { "message": "Keurweb: not enabled for this site", "description": "Tab badge tooltip when the site is not enabled." },
+
+  "notifyTitle": { "message": "Keurweb", "description": "Notification title." },
+  "notifyReconnect": {
+    "message": "Keurweb: $1 disconnected — reconnecting…",
+    "description": "Notification body when a protected tab is being reloaded. $1 = host."
+  },
+
+  "logTracking": { "message": "Tracking $1 (tab $2)", "description": "Activity log: a tab started being tracked. $1 = host, $2 = tab id." },
+  "logUntracked": { "message": "Stopped tracking $1 (tab $2 closed)", "description": "Activity log: tracking stopped. $1 = host, $2 = tab id." },
+  "logSurrendered": {
+    "message": "Giving up on $1 (tab $2) — recovery budget exhausted (will retry in 5 min)",
+    "description": "Activity log: recovery budget exhausted. $1 = host, $2 = tab id."
+  },
+  "logReloadScheduled": {
+    "message": "$1 disconnected ($2) — reloading in $3s (attempt $4/$5)",
+    "description": "Activity log: reload scheduled. $1 = host, $2 = reason, $3 = seconds, $4 = attempt, $5 = max attempts."
+  },
+  "logRecovered": { "message": "$1 recovered after $2 attempt(s)", "description": "Activity log: tab recovered. $1 = host, $2 = attempts." },
+  "logToggledOn": { "message": "$1 enabled via popup", "description": "Activity log: site enabled from the popup. $1 = host." },
+  "logToggledOff": { "message": "$1 disabled via popup", "description": "Activity log: site disabled from the popup. $1 = host." },
+
+  "popupTitle": { "message": "Keurweb", "description": "Popup header." },
+  "masterAria": { "message": "Keurweb master switch", "description": "Accessible name for the popup master switch." },
+  "masterTitle": { "message": "Master switch — protects only sites you enabled", "description": "Popup master switch tooltip." },
+  "nothingTitle": { "message": "Nothing to protect here.", "description": "Popup: unsupported page (chrome:// etc.)." },
+  "nothingHint": {
+    "message": "Open a regular website (https://…), then use this popup to keep it alive.",
+    "description": "Popup: unsupported page hint."
+  },
+  "openSettings": { "message": "Open settings", "description": "Popup: button opening the options dashboard from the unsupported view." },
+  "keepAlive": { "message": "Keep this site alive", "description": "Popup: main enable button." },
+  "keepingAlive": { "message": "✓ Keeping this site alive", "description": "Popup: main button while protecting." },
+  "statusReconnecting": { "message": "Reconnecting…", "description": "Popup: status badge while recovering." },
+  "statusReconnectingLine": { "message": "Tab lost — Keurweb is restoring it.", "description": "Popup: status line while recovering." },
+  "statusMasterOff": { "message": "Master off", "description": "Popup: status badge when the master switch is off." },
+  "statusMasterOffLine": { "message": "Turn on the master switch to activate.", "description": "Popup: status line when the master switch is off." },
+  "statusNotProtected": { "message": "Not protected", "description": "Popup: status badge for an idle site." },
+  "statusNotProtectedLine": { "message": "This site is idle — enable keep-alive below.", "description": "Popup: status line for an idle site." },
+  "statusProtected": { "message": "Protected", "description": "Popup: status badge while protecting." },
+  "statusHeartbeatActive": { "message": "Heartbeat active.", "description": "Popup: status line when no countdown is available." },
+  "statusNextHeartbeat": { "message": "Next heartbeat in $1", "description": "Popup: status line with countdown. $1 = duration." },
+  "durMinutes": { "message": "$1m", "description": "Duration in minutes (popup countdown). $1 = number." },
+  "durSeconds": { "message": "$1s", "description": "Duration in seconds (popup countdown). $1 = number." },
+  "intervalLabel": { "message": "Heartbeat every $1s", "description": "Popup: interval slider label. $1 = seconds." },
+  "intervalHint": {
+    "message": "Sends a background warm-up ping so servers don't expire your session.",
+    "description": "Popup: interval slider hint."
+  },
+  "autoReconnect": { "message": "Auto-reconnect if the tab dies", "description": "Popup: auto-reconnect checkbox." },
+  "attemptsPrefix": { "message": "up to", "description": "Popup: before the max-attempts select." },
+  "attemptsAria": { "message": "Maximum reconnect attempts", "description": "Accessible name for the max-attempts select." },
+  "simulateActivity": { "message": "Simulate activity (anti-idle)", "description": "Popup: activity checkbox." },
+  "refreshNow": { "message": "⟳ Refresh now", "description": "Popup: instant ping button." },
+  "refreshNowTitle": { "message": "Send a keep-alive ping right now", "description": "Popup: instant ping button tooltip." },
+  "siteSettings": { "message": "Site settings →", "description": "Popup: link to the site's options panel." },
+  "masterNote": { "message": "⚠️ The master switch is off — turn it on to protect this site.", "description": "Popup: warning when the master switch is off." },
+  "footerDefault": { "message": "Keurweb keeps your web alive.", "description": "Popup footer." },
+  "footerUnsupported": { "message": "Master switch applies to all sites.", "description": "Popup footer on unsupported pages." },
+  "settings": { "message": "Settings", "description": "Popup: button opening the options dashboard." },
+  "statsNoLast": { "message": "$1 heartbeats · $2 reconnects", "description": "Popup: per-site stats without a last-ping time. $1 = heartbeats, $2 = reconnects." },
+  "statsWithLast": {
+    "message": "$1 heartbeats · $2 reconnects · last ping $3",
+    "description": "Popup: per-site stats. $1 = heartbeats, $2 = reconnects, $3 = relative time."
+  },
+  "wildcardVia": { "message": "via $1 (includes subdomains)", "description": "Popup: note when protection comes from a wildcard rule. $1 = rule." },
+  "relJustNow": { "message": "just now", "description": "Relative time: a moment ago." },
+  "relSecondsAgo": { "message": "$1s ago", "description": "Relative time. $1 = seconds." },
+  "relMinutesAgo": { "message": "$1m ago", "description": "Relative time. $1 = minutes." },
+  "relHoursAgo": { "message": "$1h ago", "description": "Relative time. $1 = hours." },
+  "relDaysAgo": { "message": "$1d ago", "description": "Relative time. $1 = days." },
+
+  "pageTitle": { "message": "Keurweb — Settings", "description": "Options document title." },
+  "tagline": { "message": "Keep Your Web", "description": "Brand tagline in the options sidebar." },
+  "navGeneral": { "message": "General", "description": "Options sidebar: General view." },
+  "navSites": { "message": "Sites", "description": "Options sidebar: Sites view." },
+  "navLog": { "message": "Activity log", "description": "Options sidebar: Activity log view." },
+  "navAbout": { "message": "About", "description": "Options sidebar: About view." },
+  "masterLabel": { "message": "Master switch", "description": "Options sidebar: master switch label." },
+  "masterHint": { "message": "Off disables everything.", "description": "Options sidebar: master switch hint." },
+  "masterAriaOptions": { "message": "Master switch", "description": "Accessible name for the options master switch." },
+
+  "generalTitle": { "message": "General", "description": "General view heading." },
+  "generalLead": {
+    "message": "Defaults applied to every site you enable. Each site can override them in the Sites section.",
+    "description": "General view intro."
+  },
+  "cardHeartbeat": { "message": "💓 Session heartbeat", "description": "General: heartbeat card title." },
+  "cardHeartbeatHint": {
+    "message": "Sends a background warm-up request to the site so servers don't expire your session while you're idle.",
+    "description": "General: heartbeat card hint."
+  },
+  "enableHeartbeat": { "message": "Enable heartbeat", "description": "General: heartbeat switch." },
+  "intervalLabelG": { "message": "Interval", "description": "General: interval control label." },
+  "everySec": { "message": "Every $1s", "description": "Dynamic hint for the heartbeat interval. $1 = seconds." },
+  "requestMethod": { "message": "Request method", "description": "General: method select label." },
+  "methodHead": { "message": "HEAD (lightweight)", "description": "General: HEAD option." },
+  "methodGet": { "message": "GET (broad compatibility)", "description": "General: GET option." },
+  "cardActivity": { "message": "🖱️ Anti-idle activity", "description": "General: activity card title." },
+  "cardActivityHint": {
+    "message": "Simulates benign user activity inside the page so apps with \"are you still there?\" idle timers don't log you out.",
+    "description": "General: activity card hint."
+  },
+  "simulateLabel": { "message": "Simulate activity", "description": "General: activity switch." },
+  "simulationMode": { "message": "Simulation mode", "description": "General: mode select label." },
+  "modeEvents": { "message": "Pointer & key events", "description": "General: events mode option." },
+  "modeFocus": { "message": "Focus events only", "description": "General: focus mode option." },
+  "modeBoth": { "message": "Both", "description": "General: both mode option." },
+  "antiDiscardLabel": { "message": "Anti-discard sweep", "description": "General: anti-discard switch." },
+  "antiDiscardHint": { "message": "Discourages Brave's Memory Saver from freezing the tab.", "description": "General: anti-discard hint." },
+  "cardReconnect": { "message": "🚑 Auto-reconnect", "description": "General: reconnect card title." },
+  "cardReconnectHint": {
+    "message": "When a protected tab dies (error page, network drop, crash), Keurweb reloads it automatically.",
+    "description": "General: reconnect card hint."
+  },
+  "reloadDeadTabs": { "message": "Reload dead tabs", "description": "General: auto-reload switch." },
+  "maxAttempts": { "message": "Max attempts per tab", "description": "General: max attempts label." },
+  "backoffLabel": { "message": "Retry backoff base", "description": "General: backoff label." },
+  "backoffHint": { "message": "First retry after $1s, doubling each attempt.", "description": "General: backoff hint. $1 = seconds." },
+  "budgetLabel": { "message": "Recovery budget", "description": "General: budget label." },
+  "budgetHint": { "message": "Give up after $1 min of failed retries.", "description": "General: budget hint. $1 = minutes." },
+  "notifyOnReconnect": { "message": "Notify when reconnecting", "description": "General: notify switch." },
+  "cardData": { "message": "💾 Data", "description": "General: data card title." },
+  "cardDataHint": { "message": "Back up your configuration or move it to another browser.", "description": "General: data card hint." },
+  "exportSettingsBtn": { "message": "⬇️ Export settings", "description": "General: export button." },
+  "importSettingsBtn": { "message": "⬆️ Import settings", "description": "General: import button." },
+  "resetAllBtn": { "message": "🗑️ Reset everything", "description": "General: reset button." },
+
+  "sitesTitle": { "message": "Sites", "description": "Sites view heading." },
+  "sitesLead": {
+    "message": "Keurweb protects only the sites you enable here (or via the popup / Alt+Shift+K).",
+    "description": "Sites view intro."
+  },
+  "addPlaceholder": { "message": "example.com or *.example.com", "description": "Sites: add input placeholder." },
+  "addSiteAria": { "message": "Site address", "description": "Accessible name for the add-site input." },
+  "addSiteBtn": { "message": "＋ Add site", "description": "Sites: add button." },
+  "addErrorInvalid": {
+    "message": "That doesn't look like a website address. Try example.com or *.example.com",
+    "description": "Sites: invalid input error."
+  },
+  "addErrorExists": { "message": "$1 is already in your list.", "description": "Sites: duplicate error. $1 = rule." },
+  "wildcardTip": {
+    "message": "Tip: *.example.com protects the whole family — example.com and every subdomain.",
+    "description": "Sites: wildcard help tip."
+  },
+  "sitesEmptyTitle": { "message": "No sites yet.", "description": "Sites: empty state title." },
+  "sitesEmptyHint": {
+    "message": "Add one above, or open any website and click the Keurweb toolbar icon → Keep this site alive.",
+    "description": "Sites: empty state hint."
+  },
+  "chipSubdomains": { "message": "Subdomains", "description": "Sites: chip marking wildcard rules." },
+  "customizeBtn": { "message": "Customize ▼", "description": "Sites: expand per-site options." },
+  "hideBtn": { "message": "Hide options ▲", "description": "Sites: collapse per-site options." },
+  "usingDefaults": { "message": "Using global defaults — customize below.", "description": "Sites: note when a site has no overrides." },
+  "rowHeartbeat": { "message": "Session heartbeat", "description": "Site detail: heartbeat row." },
+  "rowHeartbeatHint": { "message": "Warm-up ping to keep the session alive", "description": "Site detail: heartbeat hint." },
+  "rowInterval": { "message": "Heartbeat interval", "description": "Site detail: interval row." },
+  "rowActivity": { "message": "Anti-idle activity", "description": "Site detail: activity row." },
+  "rowActivityHint": { "message": "Simulated user activity", "description": "Site detail: activity hint." },
+  "rowAntiDiscard": { "message": "Anti-discard sweep", "description": "Site detail: anti-discard row." },
+  "rowAntiDiscardHint": { "message": "Discourages tab freezing", "description": "Site detail: anti-discard hint." },
+  "rowAutoReload": { "message": "Auto-reconnect", "description": "Site detail: auto-reload row." },
+  "rowAutoReloadHint": { "message": "Reload the tab when it dies", "description": "Site detail: auto-reload hint." },
+  "rowNotify": { "message": "Notify when reconnecting", "description": "Site detail: notify row." },
+  "resetSiteBtn": { "message": "↺ Reset to defaults", "description": "Site detail: reset button." },
+  "removeBtn": { "message": "Remove", "description": "Sites: remove button." },
+  "removeTitle": { "message": "Stop managing $1", "description": "Sites: remove tooltip. $1 = rule." },
+  "removeConfirm": { "message": "Remove $1 from Keurweb?", "description": "Sites: remove confirm dialog. $1 = rule." },
+  "protectionOn": { "message": "Protection on", "description": "Sites: switch tooltip (on)." },
+  "protectionOff": { "message": "Protection off", "description": "Sites: switch tooltip (off)." },
+  "protectAria": { "message": "Protect $1", "description": "Accessible name for the site switch. $1 = rule." },
+  "nowProtecting": { "message": "Now protecting $1", "description": "Toast after adding a site. $1 = rule." },
+  "protecting": { "message": "Protecting $1", "description": "Toast after enabling a site. $1 = rule." },
+  "paused": { "message": "$1 paused", "description": "Toast after pausing a site. $1 = rule." },
+  "removed": { "message": "$1 removed", "description": "Toast after removing a site. $1 = rule." },
+  "resetToDefaults": { "message": "$1 reset to defaults", "description": "Toast after resetting a site. $1 = rule." },
+
+  "statsLabel": { "message": "Stats", "description": "Site detail: stats block title." },
+  "lastDisconnect": { "message": "Last disconnect: $1", "description": "Site detail: last disconnect time. $1 = time." },
+  "lastRecover": { "message": "Last recovery: $1", "description": "Site detail: last recovery time. $1 = time." },
+  "resetStatsBtn": { "message": "Reset stats", "description": "Site detail: reset stats button." },
+  "statsReset": { "message": "Stats reset", "description": "Toast after resetting stats." },
+  "statsEmpty": { "message": "No activity yet", "description": "Site detail: stats placeholder." },
+
+  "logTitle": { "message": "Activity log", "description": "Log view heading." },
+  "clearBtn": { "message": "Clear", "description": "Log view: clear button." },
+  "exportLogBtn": { "message": "Export log (JSON)", "description": "Log view: export button." },
+  "logLead": { "message": "What Keurweb did recently. Newest first, up to 500 entries.", "description": "Log view intro." },
+  "logEmpty": { "message": "Nothing logged yet — enable a site and Keurweb will report here.", "description": "Log view empty state." },
+  "logExported": { "message": "Log exported", "description": "Toast after exporting the log." },
+
+  "aboutTitle": { "message": "About", "description": "About view heading." },
+  "aboutName": { "message": "Keurweb — Keep Your Web", "description": "About: product name." },
+  "aboutVersion": { "message": "Version $1", "description": "About: version line. $1 = version." },
+  "aboutBlurb": {
+    "message": "Keurweb keeps your websites working for a long time — no idle disconnects, no session timeouts, no frozen or discarded tabs. All locally, with no data collection.",
+    "description": "About: description."
+  },
+  "featureHeartbeat": { "message": "💓 Session heartbeats keep server sessions warm", "description": "About: feature bullet." },
+  "featureActivity": { "message": "🖱️ Anti-idle activity simulation", "description": "About: feature bullet." },
+  "featureAntiDiscard": { "message": "🧊 Anti-discard sweep for Brave's Memory Saver", "description": "About: feature bullet." },
+  "featureReconnect": { "message": "🚑 Auto-reconnect with backoff for dead tabs", "description": "About: feature bullet." },
+  "featurePerSite": { "message": "🌐 Per-site configuration with global defaults", "description": "About: feature bullet." },
+  "featureWildcards": { "message": "🌱 Subdomain rules — protect a whole site family at once", "description": "About: feature bullet." },
+  "shortcutLead": { "message": "Keyboard shortcut:", "description": "About: before the shortcut key." },
+  "shortcutBody": { "message": "toggles the active site. Change it at", "description": "About: between the shortcut key and the settings URLs." },
+  "shortcutOr": { "message": "or", "description": "About: between the two settings URLs." },
+  "sourceLabel": { "message": "Source & issues:", "description": "About: before the repository link." },
+  "mitLicense": { "message": "MIT License", "description": "About: license line." },
+  "langsLine": { "message": "Languages: English · Tiếng Việt (follows your browser language)", "description": "About: available languages." },
+
+  "saved": { "message": "Saved", "description": "Toast after saving a setting." },
+  "masterOn": { "message": "Keurweb is on", "description": "Toast after enabling the master switch." },
+  "masterPaused": { "message": "Keurweb paused everywhere", "description": "Toast after disabling the master switch." },
+  "exported": { "message": "Settings exported", "description": "Toast after export." },
+  "exportFailed": { "message": "Export failed", "description": "Toast when export fails." },
+  "imported": { "message": "Settings imported", "description": "Toast after import." },
+  "importFailed": { "message": "Import failed: $1", "description": "Toast when import fails. $1 = reason." },
+  "everythingReset": { "message": "Everything reset", "description": "Toast after a full reset." },
+  "resetConfirm": { "message": "Reset ALL Keurweb settings and sites? This cannot be undone.", "description": "Confirm dialog before a full reset." }
+}

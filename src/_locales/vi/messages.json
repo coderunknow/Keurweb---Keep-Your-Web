@@ -1,0 +1,234 @@
+{
+  "appName": { "message": "Keurweb — Keep Your Web", "description": "Tên hiển thị của tiện ích (manifest name)." },
+  "appDescription": {
+    "message": "Giữ cho website của bạn hoạt động bền lâu — không rớt kết nối khi bỏ mặc, không hết phiên đăng nhập, không tab bị đóng băng hay thu hồi.",
+    "description": "Mô tả tiện ích (manifest)."
+  },
+  "actionTitle": { "message": "Keurweb — Keep Your Web", "description": "Chuột đặt vào biểu tượng thanh công cụ." },
+  "commandToggleDesc": { "message": "Bật/tắt Keurweb cho website của tab đang mở", "description": "Mô tả phím tắt." },
+
+  "badgeDefault": { "message": "Keurweb", "description": "Chuột đặt vào huy hiệu tab mặc định." },
+  "badgeProtected": { "message": "Keurweb: đang bảo vệ website này", "description": "Huy hiệu tab khi đang bảo vệ." },
+  "badgeRecovering": { "message": "Keurweb: đang khôi phục tab này", "description": "Huy hiệu tab khi đang kết nối lại." },
+  "badgeGlobalOff": { "message": "Keurweb: công tắc tổng đang tắt", "description": "Huy hiệu tab khi công tắc tổng tắt." },
+  "badgeSiteOff": { "message": "Keurweb: chưa bật cho website này", "description": "Huy hiệu tab khi website chưa được bật." },
+
+  "notifyTitle": { "message": "Keurweb", "description": "Tiêu đề thông báo." },
+  "notifyReconnect": {
+    "message": "Keurweb: $1 bị ngắt — đang kết nối lại…",
+    "description": "Nội dung thông báo khi tab được bảo vệ sắp tải lại. $1 = host."
+  },
+
+  "logTracking": { "message": "Đang theo dõi $1 (tab $2)", "description": "Nhật ký: bắt đầu theo dõi tab. $1 = host, $2 = id tab." },
+  "logUntracked": { "message": "Đã dừng theo dõi $1 (tab $2 đã đóng)", "description": "Nhật ký: dừng theo dõi. $1 = host, $2 = id tab." },
+  "logSurrendered": {
+    "message": "Bỏ $1 (tab $2) — đã hết hạn mức khôi phục (sẽ thử lại sau 5 phút)",
+    "description": "Nhật ký: hết hạn mức khôi phục. $1 = host, $2 = id tab."
+  },
+  "logReloadScheduled": {
+    "message": "$1 bị ngắt ($2) — tải lại sau $3s (lần $4/$5)",
+    "description": "Nhật ký: xếp lịch tải lại. $1 = host, $2 = lý do, $3 = giây, $4 = lần thử, $5 = tối đa."
+  },
+  "logRecovered": { "message": "$1 đã khôi phục sau $2 lần thử", "description": "Nhật ký: tab đã hồi phục. $1 = host, $2 = số lần thử." },
+  "logToggledOn": { "message": "Đã bật $1 qua popup", "description": "Nhật ký: bật website từ popup. $1 = host." },
+  "logToggledOff": { "message": "Đã tắt $1 qua popup", "description": "Nhật ký: tắt website từ popup. $1 = host." },
+
+  "popupTitle": { "message": "Keurweb", "description": "Tiêu đề popup." },
+  "masterAria": { "message": "Công tắc tổng của Keurweb", "description": "Tên truy cập cho công tắc tổng trong popup." },
+  "masterTitle": { "message": "Công tắc tổng — chỉ bảo vệ các website bạn đã bật", "description": "Ghi chú công tắc tổng trong popup." },
+  "nothingTitle": { "message": "Không có gì cần bảo vệ ở đây.", "description": "Popup: trang không hỗ trợ (chrome:// v.v.)." },
+  "nothingHint": {
+    "message": "Mở một website thường (https://…), rồi dùng popup này để giữ nó hoạt động.",
+    "description": "Popup: gợi ý cho trang không hỗ trợ."
+  },
+  "openSettings": { "message": "Mở cài đặt", "description": "Popup: nút mở bảng cài đặt từ chế độ không hỗ trợ." },
+  "keepAlive": { "message": "Giữ website này hoạt động", "description": "Popup: nút bật chính." },
+  "keepingAlive": { "message": "✓ Đang giữ website này hoạt động", "description": "Popup: nút chính khi đang bảo vệ." },
+  "statusReconnecting": { "message": "Đang kết nối lại…", "description": "Popup: huy hiệu trạng thái khi khôi phục." },
+  "statusReconnectingLine": { "message": "Tab bị mất — Keurweb đang khôi phục.", "description": "Popup: dòng trạng thái khi khôi phục." },
+  "statusMasterOff": { "message": "Tắt tổng", "description": "Popup: huy hiệu khi công tắc tổng tắt." },
+  "statusMasterOffLine": { "message": "Bật công tắc tổng để kích hoạt.", "description": "Popup: dòng trạng thái khi công tắc tổng tắt." },
+  "statusNotProtected": { "message": "Chưa bảo vệ", "description": "Popup: huy hiệu cho website nhàn rỗi." },
+  "statusNotProtectedLine": { "message": "Website này đang nhàn rỗi — bật giữ hoạt động bên dưới.", "description": "Popup: dòng trạng thái cho website nhàn rỗi." },
+  "statusProtected": { "message": "Đang bảo vệ", "description": "Popup: huy hiệu khi đang bảo vệ." },
+  "statusHeartbeatActive": { "message": "Nhịp tim đang hoạt động.", "description": "Popup: dòng trạng thái khi không có đếm ngược." },
+  "statusNextHeartbeat": { "message": "Nhịp tim tiếp theo sau $1", "description": "Popup: dòng trạng thái có đếm ngược. $1 = khoảng thời gian." },
+  "durMinutes": { "message": "$1 phút", "description": "Khoảng thời gian tính bằng phút. $1 = số." },
+  "durSeconds": { "message": "$1 giây", "description": "Khoảng thời gian tính bằng giây. $1 = số." },
+  "intervalLabel": { "message": "Nhịp tim mỗi $1 giây", "description": "Popup: nhãn thanh trượt khoảng cách. $1 = giây." },
+  "intervalHint": {
+    "message": "Gửi ping làm ấm ở nền để máy chủ không chấm dứt phiên của bạn.",
+    "description": "Popup: chú thích thanh trượt khoảng cách."
+  },
+  "autoReconnect": { "message": "Tự kết nối lại nếu tab bị chết", "description": "Popup: ô chọn tự kết nối lại." },
+  "attemptsPrefix": { "message": "tối đa", "description": "Popup: chữ trước ô chọn số lần tối đa." },
+  "attemptsAria": { "message": "Số lần kết nối lại tối đa", "description": "Tên truy cập cho ô chọn số lần tối đa." },
+  "simulateActivity": { "message": "Mô phỏng hoạt động (chống nhàn rỗi)", "description": "Popup: ô chọn mô phỏng hoạt động." },
+  "refreshNow": { "message": "⟳ Làm mới ngay", "description": "Popup: nút ping ngay." },
+  "refreshNowTitle": { "message": "Gửi ping giữ hoạt động ngay bây giờ", "description": "Popup: chú thích nút ping ngay." },
+  "siteSettings": { "message": "Cài đặt website →", "description": "Popup: liên kết tới bảng cài đặt của website." },
+  "masterNote": { "message": "⚠️ Công tắc tổng đang tắt — bật lên để bảo vệ website này.", "description": "Popup: cảnh báo khi công tắc tổng tắt." },
+  "footerDefault": { "message": "Keurweb giữ web của bạn luôn hoạt động.", "description": "Chân popup." },
+  "footerUnsupported": { "message": "Công tắc tổng áp dụng cho tất cả website.", "description": "Chân popup ở trang không hỗ trợ." },
+  "settings": { "message": "Cài đặt", "description": "Popup: nút mở bảng cài đặt." },
+  "statsNoLast": { "message": "$1 nhịp tim · $2 kết nối lại", "description": "Popup: thống kê không có thời gian ping cuối. $1 = nhịp tim, $2 = kết nối lại." },
+  "statsWithLast": {
+    "message": "$1 nhịp tim · $2 kết nối lại · ping cuối $3",
+    "description": "Popup: thống kê. $1 = nhịp tim, $2 = kết nối lại, $3 = thời gian tương đối."
+  },
+  "wildcardVia": { "message": "qua $1 (kể cả miền con)", "description": "Popup: chú thích khi được bảo vệ nhờ quy tắc miền con. $1 = quy tắc." },
+  "relJustNow": { "message": "vừa xong", "description": "Thời gian tương đối: ngay bây giờ." },
+  "relSecondsAgo": { "message": "cách đây $1 giây", "description": "Thời gian tương đối. $1 = giây." },
+  "relMinutesAgo": { "message": "cách đây $1 phút", "description": "Thời gian tương đối. $1 = phút." },
+  "relHoursAgo": { "message": "cách đây $1 giờ", "description": "Thời gian tương đối. $1 = giờ." },
+  "relDaysAgo": { "message": "cách đây $1 ngày", "description": "Thời gian tương đối. $1 = ngày." },
+
+  "pageTitle": { "message": "Keurweb — Cài đặt", "description": "Tiêu đề trang cài đặt." },
+  "tagline": { "message": "Keep Your Web", "description": "Khẩu hiệu thương hiệu trong thanh bên." },
+  "navGeneral": { "message": "Chung", "description": "Thanh bên: mục Chung." },
+  "navSites": { "message": "Website", "description": "Thanh bên: mục Website." },
+  "navLog": { "message": "Nhật ký hoạt động", "description": "Thanh bên: mục Nhật ký." },
+  "navAbout": { "message": "Giới thiệu", "description": "Thanh bên: mục Giới thiệu." },
+  "masterLabel": { "message": "Công tắc tổng", "description": "Thanh bên: nhãn công tắc tổng." },
+  "masterHint": { "message": "Tắt sẽ vô hiệu hóa mọi thứ.", "description": "Thanh bên: chú thích công tắc tổng." },
+  "masterAriaOptions": { "message": "Công tắc tổng", "description": "Tên truy cập cho công tắc tổng ở trang cài đặt." },
+
+  "generalTitle": { "message": "Chung", "description": "Tiêu đề mục Chung." },
+  "generalLead": {
+    "message": "Giá trị mặc định áp dụng cho mọi website bạn bật. Mỗi website có thể ghi đè trong phần Website.",
+    "description": "Câu mở đầu mục Chung."
+  },
+  "cardHeartbeat": { "message": "💓 Nhịp tim phiên", "description": "Chung: tiêu đề thẻ nhịp tim." },
+  "cardHeartbeatHint": {
+    "message": "Gửi yêu cầu làm ấm ở nền đến website để máy chủ không chấm dứt phiên khi bạn để trống.",
+    "description": "Chung: chú thích thẻ nhịp tim."
+  },
+  "enableHeartbeat": { "message": "Bật nhịp tim", "description": "Chung: công tắc nhịp tim." },
+  "intervalLabelG": { "message": "Khoảng cách", "description": "Chung: nhãn khoảng cách." },
+  "everySec": { "message": "Mỗi $1s", "description": "Chú thích động cho khoảng cách nhịp tim. $1 = giây." },
+  "requestMethod": { "message": "Phương thức yêu cầu", "description": "Chung: nhãn chọn phương thức." },
+  "methodHead": { "message": "HEAD (nhẹ)", "description": "Chung: tùy chọn HEAD." },
+  "methodGet": { "message": "GET (tương thích rộng)", "description": "Chung: tùy chọn GET." },
+  "cardActivity": { "message": "🖱️ Chống nhàn rỗi", "description": "Chung: tiêu đề thẻ chống nhàn rỗi." },
+  "cardActivityHint": {
+    "message": "Mô phỏng hoạt động người dùng vô hại trong trang để ứng dụng có bộ đếm \"bạn còn ở đó không?\" không đăng xuất bạn.",
+    "description": "Chung: chú thích thẻ chống nhàn rỗi."
+  },
+  "simulateLabel": { "message": "Mô phỏng hoạt động", "description": "Chung: công tắc mô phỏng." },
+  "simulationMode": { "message": "Chế độ mô phỏng", "description": "Chung: nhãn chọn chế độ." },
+  "modeEvents": { "message": "Sự kiện con trỏ & phím", "description": "Chung: chế độ sự kiện." },
+  "modeFocus": { "message": "Chỉ sự kiện focus", "description": "Chung: chế độ focus." },
+  "modeBoth": { "message": "Cả hai", "description": "Chung: chế độ cả hai." },
+  "antiDiscardLabel": { "message": "Quét chống thu hồi", "description": "Chung: công tắc chống thu hồi." },
+  "antiDiscardHint": { "message": "Hạn chế Memory Saver của Brave đóng băng tab.", "description": "Chung: chú thích chống thu hồi." },
+  "cardReconnect": { "message": "🚑 Tự kết nối lại", "description": "Chung: tiêu đề thẻ tự kết nối lại." },
+  "cardReconnectHint": {
+    "message": "Khi tab được bảo vệ bị chết (trang lỗi, mất mạng, sập), Keurweb tự tải lại.",
+    "description": "Chung: chú thích thẻ tự kết nối lại."
+  },
+  "reloadDeadTabs": { "message": "Tải lại tab bị chết", "description": "Chung: công tắc tự tải lại." },
+  "maxAttempts": { "message": "Số lần thử tối đa mỗi tab", "description": "Chung: nhãn số lần tối đa." },
+  "backoffLabel": { "message": "Cơ sở lùi nhịp thử lại", "description": "Chung: nhãn lùi nhịp." },
+  "backoffHint": { "message": "Thử lại đầu sau $1s, nhân đôi mỗi lần.", "description": "Chung: chú thích lùi nhịp. $1 = giây." },
+  "budgetLabel": { "message": "Ngân sách khôi phục", "description": "Chung: nhãn ngân sách." },
+  "budgetHint": { "message": "Bỏ cuộc sau $1 phút thử lại thất bại.", "description": "Chung: chú thích ngân sách. $1 = phút." },
+  "notifyOnReconnect": { "message": "Thông báo khi kết nối lại", "description": "Chung: công tắc thông báo." },
+  "cardData": { "message": "💾 Dữ liệu", "description": "Chung: tiêu đề thẻ dữ liệu." },
+  "cardDataHint": { "message": "Sao lưu cấu hình hoặc chuyển sang trình duyệt khác.", "description": "Chung: chú thích thẻ dữ liệu." },
+  "exportSettingsBtn": { "message": "⬇️ Xuất cài đặt", "description": "Chung: nút xuất." },
+  "importSettingsBtn": { "message": "⬆️ Nhập cài đặt", "description": "Chung: nút nhập." },
+  "resetAllBtn": { "message": "🗑️ Đặt lại tất cả", "description": "Chung: nút đặt lại." },
+
+  "sitesTitle": { "message": "Website", "description": "Tiêu đề mục Website." },
+  "sitesLead": {
+    "message": "Keurweb chỉ bảo vệ các website bạn bật ở đây (hoặc qua popup / Alt+Shift+K).",
+    "description": "Câu mở đầu mục Website."
+  },
+  "addPlaceholder": { "message": "example.com hoặc *.example.com", "description": "Website: chữ mẫu ô thêm." },
+  "addSiteAria": { "message": "Địa chỉ website", "description": "Tên truy cập cho ô thêm website." },
+  "addSiteBtn": { "message": "＋ Thêm website", "description": "Website: nút thêm." },
+  "addErrorInvalid": {
+    "message": "Trông không giống địa chỉ website. Thử example.com hoặc *.example.com",
+    "description": "Website: lỗi đầu vào không hợp lệ."
+  },
+  "addErrorExists": { "message": "$1 đã có trong danh sách của bạn.", "description": "Website: lỗi trùng lặp. $1 = quy tắc." },
+  "wildcardTip": {
+    "message": "Mẹo: *.example.com bảo vệ cả gia đình — example.com và mọi miền con.",
+    "description": "Website: mẹo quy tắc miền con."
+  },
+  "sitesEmptyTitle": { "message": "Chưa có website nào.", "description": "Website: trạng thái trống." },
+  "sitesEmptyHint": {
+    "message": "Thêm ở trên, hoặc mở một website bất kỳ rồi click biểu tượng Keurweb trên thanh công cụ → Giữ website này hoạt động.",
+    "description": "Website: gợi ý khi trống."
+  },
+  "chipSubdomains": { "message": "Miền con", "description": "Website: nhãn quy tắc miền con." },
+  "customizeBtn": { "message": "Tùy chỉnh ▼", "description": "Website: mở tùy chọn riêng." },
+  "hideBtn": { "message": "Ẩn tùy chọn ▲", "description": "Website: đóng tùy chọn riêng." },
+  "usingDefaults": { "message": "Đang dùng mặc định toàn cục — tùy chỉnh bên dưới.", "description": "Website: chú thích khi chưa có giá trị riêng." },
+  "rowHeartbeat": { "message": "Nhịp tim phiên", "description": "Chi tiết website: dòng nhịp tim." },
+  "rowHeartbeatHint": { "message": "Ping làm ấm để giữ phiên sống", "description": "Chi tiết website: chú thích nhịp tim." },
+  "rowInterval": { "message": "Khoảng cách nhịp tim", "description": "Chi tiết website: dòng khoảng cách." },
+  "rowActivity": { "message": "Chống nhàn rỗi", "description": "Chi tiết website: dòng chống nhàn rỗi." },
+  "rowActivityHint": { "message": "Hoạt động người dùng mô phỏng", "description": "Chi tiết website: chú thích chống nhàn rỗi." },
+  "rowAntiDiscard": { "message": "Quét chống thu hồi", "description": "Chi tiết website: dòng chống thu hồi." },
+  "rowAntiDiscardHint": { "message": "Hạn chế tab bị đóng băng", "description": "Chi tiết website: chú thích chống thu hồi." },
+  "rowAutoReload": { "message": "Tự kết nối lại", "description": "Chi tiết website: dòng tự kết nối lại." },
+  "rowAutoReloadHint": { "message": "Tải lại tab khi nó bị chết", "description": "Chi tiết website: chú thích tự kết nối lại." },
+  "rowNotify": { "message": "Thông báo khi kết nối lại", "description": "Chi tiết website: dòng thông báo." },
+  "resetSiteBtn": { "message": "↺ Đặt lại mặc định", "description": "Chi tiết website: nút đặt lại." },
+  "removeBtn": { "message": "Xóa", "description": "Website: nút xóa." },
+  "removeTitle": { "message": "Dừng quản lý $1", "description": "Website: chú thích nút xóa. $1 = quy tắc." },
+  "removeConfirm": { "message": "Xóa $1 khỏi Keurweb?", "description": "Website: xác nhận xóa. $1 = quy tắc." },
+  "protectionOn": { "message": "Đang bảo vệ", "description": "Website: chú thích công tắc (bật)." },
+  "protectionOff": { "message": "Tắt bảo vệ", "description": "Website: chú thích công tắc (tắt)." },
+  "protectAria": { "message": "Bảo vệ $1", "description": "Tên truy cập cho công tắc website. $1 = quy tắc." },
+  "nowProtecting": { "message": "Đang bảo vệ $1", "description": "Toast sau khi thêm website. $1 = quy tắc." },
+  "protecting": { "message": "Đang bảo vệ $1", "description": "Toast sau khi bật website. $1 = quy tắc." },
+  "paused": { "message": "Đã tạm dừng $1", "description": "Toast sau khi tạm dừng website. $1 = quy tắc." },
+  "removed": { "message": "Đã xóa $1", "description": "Toast sau khi xóa website. $1 = quy tắc." },
+  "resetToDefaults": { "message": "Đã đặt lại $1 về mặc định", "description": "Toast sau khi đặt lại website. $1 = quy tắc." },
+
+  "statsLabel": { "message": "Thống kê", "description": "Chi tiết website: tiêu đề khối thống kê." },
+  "lastDisconnect": { "message": "Ngắt lần cuối: $1", "description": "Chi tiết website: thời gian ngắt lần cuối. $1 = thời gian." },
+  "lastRecover": { "message": "Khôi phục lần cuối: $1", "description": "Chi tiết website: thời gian khôi phục lần cuối. $1 = thời gian." },
+  "resetStatsBtn": { "message": "Đặt lại thống kê", "description": "Chi tiết website: nút đặt lại thống kê." },
+  "statsReset": { "message": "Đã đặt lại thống kê", "description": "Toast sau khi đặt lại thống kê." },
+  "statsEmpty": { "message": "Chưa có hoạt động nào", "description": "Chi tiết website: thống kê trống." },
+
+  "logTitle": { "message": "Nhật ký hoạt động", "description": "Tiêu đề mục Nhật ký." },
+  "clearBtn": { "message": "Xóa", "description": "Nhật ký: nút xóa." },
+  "exportLogBtn": { "message": "Xuất nhật ký (JSON)", "description": "Nhật ký: nút xuất." },
+  "logLead": { "message": "Keurweb đã làm gì gần đây. Mới nhất trước, tối đa 500 mục.", "description": "Câu mở đầu mục Nhật ký." },
+  "logEmpty": { "message": "Chưa có mục nào — bật một website và Keurweb sẽ báo cáo ở đây.", "description": "Nhật ký: trạng thái trống." },
+  "logExported": { "message": "Đã xuất nhật ký", "description": "Toast sau khi xuất nhật ký." },
+
+  "aboutTitle": { "message": "Giới thiệu", "description": "Tiêu đề mục Giới thiệu." },
+  "aboutName": { "message": "Keurweb — Keep Your Web", "description": "Tên sản phẩm." },
+  "aboutVersion": { "message": "Phiên bản $1", "description": "Dòng phiên bản. $1 = phiên bản." },
+  "aboutBlurb": {
+    "message": "Keurweb giữ cho website của bạn hoạt động bền lâu — không rớt kết nối khi bỏ mặc, không hết phiên đăng nhập, không tab bị đóng băng hay thu hồi. Hoạt động hoàn toàn cục bộ, không thu thập dữ liệu.",
+    "description": "Giới thiệu: mô tả."
+  },
+  "featureHeartbeat": { "message": "💓 Nhịp tim giữ phiên máy chủ luôn ấm", "description": "Giới thiệu: tính năng." },
+  "featureActivity": { "message": "🖱️ Mô phỏng hoạt động chống nhàn rỗi", "description": "Giới thiệu: tính năng." },
+  "featureAntiDiscard": { "message": "🧊 Quét chống thu hồi cho Memory Saver của Brave", "description": "Giới thiệu: tính năng." },
+  "featureReconnect": { "message": "🚑 Tự kết nối lại có lùi nhịp cho tab chết", "description": "Giới thiệu: tính năng." },
+  "featurePerSite": { "message": "🌐 Cấu hình riêng cho từng website với mặc định toàn cục", "description": "Giới thiệu: tính năng." },
+  "featureWildcards": { "message": "🌱 Quy tắc miền con — bảo vệ cả một gia đình website cùng lúc", "description": "Giới thiệu: tính năng." },
+  "shortcutLead": { "message": "Phím tắt:", "description": "Giới thiệu: trước phím tắt." },
+  "shortcutBody": { "message": "bật/tắt website của tab đang mở. Đổi tại", "description": "Giới thiệu: giữa phím tắt và địa chỉ cài đặt." },
+  "shortcutOr": { "message": "hoặc", "description": "Giới thiệu: giữa hai địa chỉ cài đặt." },
+  "sourceLabel": { "message": "Mã nguồn & phản hồi:", "description": "Giới thiệu: trước liên kết kho." },
+  "mitLicense": { "message": "Giấy phép MIT", "description": "Giới thiệu: dòng giấy phép." },
+  "langsLine": { "message": "Ngôn ngữ: Tiếng Việt · English (theo ngôn ngữ trình duyệt)", "description": "Giới thiệu: ngôn ngữ khả dụng." },
+
+  "saved": { "message": "Đã lưu", "description": "Toast sau khi lưu cài đặt." },
+  "masterOn": { "message": "Keurweb đang bật", "description": "Toast sau khi bật công tắc tổng." },
+  "masterPaused": { "message": "Keurweb tạm dừng ở mọi nơi", "description": "Toast sau khi tắt công tắc tổng." },
+  "exported": { "message": "Đã xuất cài đặt", "description": "Toast sau khi xuất." },
+  "exportFailed": { "message": "Xuất thất bại", "description": "Toast khi xuất lỗi." },
+  "imported": { "message": "Đã nhập cài đặt", "description": "Toast sau khi nhập." },
+  "importFailed": { "message": "Nhập thất bại: $1", "description": "Toast khi nhập lỗi. $1 = lý do." },
+  "everythingReset": { "message": "Đã đặt lại tất cả", "description": "Toast sau khi đặt lại hoàn toàn." },
+  "resetConfirm": { "message": "Đặt lại TẤT CẢ cài đặt và website của Keurweb? Không thể hoàn tác.", "description": "Hộp xác nhận trước khi đặt lại hoàn toàn." }
+}

@@ -94,18 +94,22 @@ export function canAttemptReload(rec, maxAttempts, budgetMin, now) {
   return now - rec.firstAttemptAt < budgetMs;
 }
 
-/** Badge descriptor for a protection state. */
+/**
+ * Badge descriptor for a protection state.
+ * The tooltip is an i18n message key (titleKey) so the pure core never
+ * hardcodes user-facing prose; the worker resolves it via chrome.i18n.
+ */
 export function badgeFor(state) {
   switch (state) {
     case 'protected':
-      return { text: 'ON', color: '#16a34a', title: 'Keurweb: protecting this site' };
+      return { text: 'ON', color: '#16a34a', titleKey: 'badgeProtected' };
     case 'recovering':
-      return { text: 'RX', color: '#dc2626', title: 'Keurweb: recovering this tab' };
+      return { text: 'RX', color: '#dc2626', titleKey: 'badgeRecovering' };
     case 'global-off':
-      return { text: 'OFF', color: '#6b7280', title: 'Keurweb: master switch is off' };
+      return { text: 'OFF', color: '#6b7280', titleKey: 'badgeGlobalOff' };
     case 'site-off':
-      return { text: 'OFF', color: '#9ca3af', title: 'Keurweb: not enabled for this site' };
+      return { text: 'OFF', color: '#9ca3af', titleKey: 'badgeSiteOff' };
     default:
-      return { text: '', color: '#6b7280', title: 'Keurweb' };
+      return { text: '', color: '#6b7280', titleKey: 'badgeDefault' };
   }
 }

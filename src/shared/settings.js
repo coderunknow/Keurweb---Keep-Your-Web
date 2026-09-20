@@ -103,13 +103,25 @@ export function normalizeSettings(raw) {
 
   if (Array.isArray(src.log)) {
     settings.log = src.log
-      .filter((e) => e && typeof e === 'object' && typeof e.message === 'string')
-      .slice(-LIMITS.maxLogEntries)
-      .map((e) => ({
-        ts: Number.isFinite(e.ts) ? e.ts : Date.now(),
-        level: e.level === 'warn' || e.level === 'error' ? e.level : 'info',
-        message: String(e.message).slice(0, 300),
-      }));
+      .filter((e) => e && typeof e === 'object')
+      .map((e) => {
+        const base = {
+          ts: Number.isFinite(e.ts) ? e.ts : Date.now(),
+          level: e.level === 'warn' || e.level === 'error' ? e.level : 'info',
+        };
+        // v1.1+ entries carry an i18n key + substitutions.
+        if (typeof e.key === 'string' && e.key) {
+          const params = Array.isArray(e.params) ? e.params.slice(0, 10) : [];
+          return { ...base, key: e.key.slice(0, 100), params: params.map((p) => String(p).slice(0, 100)) };
+        }
+        // Legacy v1.0 entries keep their pre-formatted message.
+        if (typeof e.message === 'string' && e.message) {
+          return { ...base, message: e.message.slice(0, 300) };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .slice(-LIMITS.maxLogEntries);
   }
 
   return settings;

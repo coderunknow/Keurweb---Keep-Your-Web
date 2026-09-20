@@ -38,14 +38,31 @@ const recoveringTabs = new Set();
 // Badge
 
 async function paintBadge(tabId, state) {
-  const { text, color, title } = badgeFor(state);
+  const { text, color, titleKey } = badgeFor(state);
   badgeState.set(tabId, state);
   try {
     await chrome.action.setBadgeText({ tabId, text });
     if (text) await chrome.action.setBadgeBackgroundColor({ tabId, color });
-    await chrome.action.setTitle({ tabId, title });
+    await chrome.action.setTitle({ tabId, title: chrome.i18n.getMessage(titleKey) || 'Keurweb' });
   } catch {
     /* tab closed before paint — ignore */
+  }
+}
+
+/**
+ * Shows a desktop notification (only fires for sites with
+ * "notify when reconnecting" turned on).
+ */
+function notify(titleKey, messageKey, messageParams) {
+  try {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'assets/icons/icon128.png',
+      title: chrome.i18n.getMessage(titleKey),
+      message: chrome.i18n.getMessage(messageKey, messageParams ?? []),
+    });
+  } catch {
+    /* notifications unavailable in this context — ignore */
   }
 }
 
@@ -60,7 +77,7 @@ async function runIntents(intents) {
           await paintBadge(intent.tabId, intent.state);
           break;
         case 'ping':
-          void performHeartbeat(intent.tabId, intent.url);
+          void performHeartbeat(intent.tabId, intent.url, intent.method);
           break;
         case 'simulate':
           await sendToTab(intent.tabId, { cmd: 'keurweb-simulate', mode: currentMode(intent.host) });
@@ -75,7 +92,7 @@ async function runIntents(intents) {
           scheduleReload(intent.tabId, intent.delayMs);
           break;
         case 'notify':
-          notify(intent.message);
+          notify(intent.titleKey, intent.messageKey, intent.messageParams);
           break;
         default:
           break;
@@ -117,10 +134,10 @@ async function sweepTab(tabId) {
 // --------------------------------------------------------------------------
 // Heartbeat (worker-side warm-up ping)
 
-async function performHeartbeat(tabId, url) {
+async function performHeartbeat(tabId, url, method = 'HEAD') {
   try {
     await fetch(url, {
-      method: 'HEAD',
+      method,
       mode: 'no-cors',
       credentials: 'include',
       cache: 'no-store',
@@ -287,7 +304,7 @@ async function handleMessage(message, sender = {}) {
         return s;
       });
       const nowEnabled = saved.sites[host]?.enabled === true;
-      engine.push('info', `${host} ${nowEnabled ? 'enabled' : 'disabled'} via popup`);
+      engine.push('info', nowEnabled ? 'logToggledOn' : 'logToggledOff', [host]);
       await resyncAllTabs();
       return { host, enabled: nowEnabled };
     }
@@ -333,7 +350,8 @@ async function handleMessage(message, sender = {}) {
       const settings = await store.load();
       const tab = await activeTabContext();
       if (tab?.id && tab.url && shouldProtect(settings, tab.url)) {
-        void performHeartbeat(tab.id, tab.url);
+        const { behavior } = resolveBehavior(settings, tab.url);
+        void performHeartbeat(tab.id, tab.url, behavior.heartbeatMethod.toUpperCase());
         await sendToTab(tab.id, { cmd: 'keurweb-simulate', mode: 'both' });
       }
       return {};

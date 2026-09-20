@@ -1,7 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { defaultSettings } from '../src/shared/constants.js';
 import { badgeFor, canAttemptReload, findSiteRule, reloadDelaySec, resolveBehavior, shouldProtect } from '../src/shared/policy.js';
+
+const src = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
 const withSite = (overrides = {}) => {
   const s = defaultSettings();
@@ -129,4 +134,13 @@ test('badgeFor maps states to visuals', () => {
   assert.equal(badgeFor('global-off').text, 'OFF');
   assert.equal(badgeFor('site-off').text, 'OFF');
   assert.equal(badgeFor('unknown').text, '');
+});
+
+test('badgeFor tooltips are i18n keys, not prose', () => {
+  const en = JSON.parse(readFileSync(resolve(src, '_locales/en/messages.json'), 'utf8'));
+  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'unknown']) {
+    const { titleKey } = badgeFor(state);
+    assert.ok(titleKey in en, `titleKey ${titleKey} must exist in en messages`);
+    assert.equal(badgeFor(state).title, undefined, 'no hardcoded tooltip prose');
+  }
 });

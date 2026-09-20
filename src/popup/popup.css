@@ -172,3 +172,17 @@ footer .btn-ghost {
   padding: 4px 8px;
   font-size: 12px;
 }
+
+/* Wildcard / stats lines ---------------------------------------------------- */
+.kw-via-line {
+  display: block;
+  font-size: 11px;
+  color: var(--kw-muted);
+  margin-top: 1px;
+}
+
+.kw-stats-line {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--kw-muted);
+}

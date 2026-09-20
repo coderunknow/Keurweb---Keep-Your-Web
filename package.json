@@ -14,7 +14,7 @@
     "test": "node --test tests/*.test.js",
     "validate": "node scripts/validate-manifest.mjs",
     "package": "node scripts/package.mjs",
-    "check": "node scripts/check-syntax.mjs",
+    "check": "node scripts/check-syntax.mjs && node scripts/check-i18n.mjs",
     "verify": "npm run check && npm run validate && npm run test && npm run package"
   },
   "engines": {

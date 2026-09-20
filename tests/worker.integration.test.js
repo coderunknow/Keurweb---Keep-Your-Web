@@ -7,12 +7,31 @@
  */
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+// The i18n mock resolves against the REAL en locale, so a typo'd message
+// key in the worker surfaces here as an empty string (caught by asserts).
+const enMessages = JSON.parse(readFileSync(resolve(root, 'src/_locales/en/messages.json'), 'utf8'));
+const getMessage = (key, subs) => {
+  const entry = enMessages[key];
+  if (!entry) return '';
+  let text = entry.message;
+  if (subs) {
+    const list = Array.isArray(subs) ? subs : [subs];
+    text = text.replace(/\$(?:10|[1-9])/g, (m) => String(list[Number(m.slice(1)) - 1] ?? ''));
+  }
+  return text;
+};
 
 // --------------------------------------------------------------------------
 // Mock chrome APIs
 
 function makeChromeMock() {
-  const calls = { fetches: [], injections: [], reloads: [], messages: [], badges: {}, alarms: [] };
+  const calls = { fetches: [], injections: [], reloads: [], messages: [], badges: {}, badgeTitles: {}, notifications: [], alarms: [] };
   const listeners = { tabsUpdated: [], tabsRemoved: [], tabsActivated: [], alarms: [], commands: [], installed: [], startup: [] };
   let messageListener = null;
   let activeTab = null;
@@ -79,7 +98,15 @@ function makeChromeMock() {
         calls.badges[tabId] = text;
       },
       async setBadgeBackgroundColor() {},
-      async setTitle() {},
+      async setTitle({ tabId, title }) {
+        calls.badgeTitles[tabId] = title;
+      },
+    },
+    i18n: { getMessage },
+    notifications: {
+      create: (options) => {
+        calls.notifications.push(options);
+      },
     },
     commands: { onCommand: makeEvent(listeners.commands) },
   };
@@ -156,6 +183,7 @@ test('enabling a site from the popup protects the tab and injects the helper', a
   state = await send({ type: 'getState' });
   assert.equal(state.snapshot.protectedNow, true);
   assert.equal(env.calls.badges[7], 'ON', 'badge shows ON for protected tab');
+  assert.equal(env.calls.badgeTitles[7], getMessage('badgeProtected'), 'badge tooltip comes from i18n');
   assert.ok(env.calls.injections.includes(7), 'content script injected');
 });
 
@@ -174,6 +202,8 @@ test('the alarm tick performs heartbeat + activity + sweep for protected tabs', 
 test('disconnect report schedules a backoff reload; completion recovers the tab', async () => {
   mock.timers.enable({ apis: ['setTimeout'] });
   try {
+    // Enable the optional reconnect notification first.
+    await send({ type: 'setSiteBehavior', host: 'app.example.com', patch: { notifyOnReload: true } });
     await send({ type: 'disconnectReport', detail: { kind: 'network' } }, { tab: { id: 7 } });
 
     // No reload before the backoff elapses
@@ -187,9 +217,12 @@ test('disconnect report schedules a backoff reload; completion recovers the tab'
     assert.equal(env.calls.reloads.length, 1, 'tab reloaded after backoff');
     assert.equal(env.calls.badges[7], 'RX', 'badge shows recovering state');
 
+    // Reconnect notification fires once, localized from the en locale.
+    assert.equal(env.calls.notifications.length, 1, 'one notification for the first attempt');
+    assert.equal(env.calls.notifications[0].title, getMessage('notifyTitle'));
+    assert.equal(env.calls.notifications[0].message, getMessage('notifyReconnect', ['app.example.com']));
+
     // Page finished loading again → recovered
-    globalThis.__keurwebRecovering = true;
-    // simulate the worker marking recovery on reload (internal), then completion:
     await fireTabUpdate(TAB, { status: 'complete', url: TAB_URL });
 
     const state = await send({ type: 'getState' });
@@ -197,6 +230,17 @@ test('disconnect report schedules a backoff reload; completion recovers the tab'
   } finally {
     mock.timers.reset();
   }
+});
+
+test('activity log entries are structured (i18n key + params) end-to-end', async () => {
+  const { log } = await send({ type: 'getLog' });
+  assert.ok(Array.isArray(log) && log.length > 0, 'log has entries');
+  for (const entry of log) {
+    assert.equal(typeof entry.key, 'string', 'every entry has an i18n key');
+    assert.ok(Array.isArray(entry.params), 'every entry has params');
+  }
+  assert.ok(log.some((l) => l.key === 'logTracking'), 'tracking entry present');
+  assert.ok(log.some((l) => l.key === 'logToggledOn'), 'toggle entry present');
 });
 
 test('keepaliveNow pings immediately and simulate reaches the tab', async () => {

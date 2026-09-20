@@ -14,6 +14,10 @@ import {
   normalizeSiteRule,
 } from '../shared/constants.js';
 import { SettingsStore } from '../shared/settings.js';
+import { applyI18n, t } from '../ui/i18n.js';
+
+applyI18n();
+document.title = t('pageTitle');
 
 const store = new SettingsStore(chrome.storage.local);
 const $ = (id) => document.getElementById(id);
@@ -33,6 +37,7 @@ const els = {
   importBtn: $('importBtn'),
   importFile: $('importFile'),
   resetBtn: $('resetBtn'),
+  exportLogBtn: $('exportLogBtn'),
   toast: $('toast'),
   version: $('version'),
 };
@@ -105,12 +110,13 @@ function syncBehaviorControls() {
     else input.value = String(settings.defaults[key] ?? '');
     reflectDependent(key);
   }
-  for (const [id, key, format] of [
-    ['g-backoffBaseSec', 'backoffBaseSec', (v) => `${v}s`],
-    ['g-budgetMin', 'budgetMin', (v) => `${v} min`],
+  $('g-heartbeatIntervalSec-val').textContent = t('everySec', settings.defaults.heartbeatIntervalSec);
+  for (const [id, key, keyHint] of [
+    ['g-backoffBaseSec', 'backoffBaseSec', 'backoffHint'],
+    ['g-budgetMin', 'budgetMin', 'budgetHint'],
   ]) {
     $(id).value = String(settings.recovery[key]);
-    $(`${id}-val`).textContent = format(settings.recovery[key]);
+    $(`${id}-val`).textContent = t(keyHint, settings.recovery[key]);
   }
 }
 
@@ -124,29 +130,28 @@ function bindBehaviorControls() {
       settings.defaults = { ...settings.defaults, [key]: value };
       await saveDefaults();
       reflectDependent(key);
-      toast('Saved');
+      toast(t('saved'));
     });
     if (input.type === 'range') {
       input.addEventListener('input', () => {
-        $(`g-${key}-val`).textContent = input.value;
+        $(`g-${key}-val`).textContent = t('everySec', input.value);
       });
     }
   }
 
-  for (const [id, key] of [
-    ['g-backoffBaseSec', 'backoffBaseSec'],
-    ['g-budgetMin', 'budgetMin'],
+  for (const [id, key, hintKey] of [
+    ['g-backoffBaseSec', 'backoffBaseSec', 'backoffHint'],
+    ['g-budgetMin', 'budgetMin', 'budgetHint'],
   ]) {
     const input = $(id);
-    const format = (v) => (key === 'budgetMin' ? `${v} min` : `${v}s`);
     input.addEventListener('change', async () => {
       const limits = LIMITS[id === 'g-budgetMin' ? 'reloadBudgetMin' : 'reloadBackoffBaseSec'];
       const n = Math.min(limits.max, Math.max(limits.min, Number(input.value) || limits.min));
       input.value = String(n);
       settings.recovery = { ...settings.recovery, [key]: n };
-      $(`${id}-val`).textContent = format(n);
+      $(`${id}-val`).textContent = t(hintKey, n);
       await saveRecovery();
-      toast('Saved');
+      toast(t('saved'));
     });
   }
 }
@@ -163,7 +168,7 @@ function reflectDependent(key) {
     if (control) control.disabled = $(`g-${key}`)?.checked === false;
   }
   if (key === 'heartbeatIntervalSec') {
-    $('g-heartbeatIntervalSec-val').textContent = $('g-heartbeatIntervalSec').value;
+    $('g-heartbeatIntervalSec-val').textContent = t('everySec', $('g-heartbeatIntervalSec').value);
   }
 }
 
@@ -191,21 +196,21 @@ function buildSiteDetail(rule) {
   const usingDefaults = ALL_BEHAVIOR_KEYS.every((k) => !(k in site));
   const interval = b.heartbeatIntervalSec ?? 60;
   const rows = [
-    behaviorRow('Session heartbeat', 'Warm-up ping to keep the session alive', switchHtml(b.heartbeat !== false, 'heartbeat')),
-    behaviorRow('Heartbeat interval', `<span data-hint="heartbeatIntervalSec">Every ${interval}s</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
-    behaviorRow('Anti-idle activity', 'Simulated user activity', switchHtml(b.activity !== false, 'activity')),
-    behaviorRow('Anti-discard sweep', 'Discourages tab freezing', switchHtml(b.antiDiscard !== false, 'antiDiscard')),
-    behaviorRow('Auto-reconnect', 'Reload the tab when it dies', switchHtml(b.autoReload !== false, 'autoReload')),
-    behaviorRow('Notify when reconnecting', '', switchHtml(b.notifyOnReload === true, 'notifyOnReload')),
+    behaviorRow(t('rowHeartbeat'), t('rowHeartbeatHint'), switchHtml(b.heartbeat !== false, 'heartbeat')),
+    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    behaviorRow(t('rowActivity'), t('rowActivityHint'), switchHtml(b.activity !== false, 'activity')),
+    behaviorRow(t('rowAntiDiscard'), t('rowAntiDiscardHint'), switchHtml(b.antiDiscard !== false, 'antiDiscard')),
+    behaviorRow(t('rowAutoReload'), t('rowAutoReloadHint'), switchHtml(b.autoReload !== false, 'autoReload')),
+    behaviorRow(t('rowNotify'), '', switchHtml(b.notifyOnReload === true, 'notifyOnReload')),
   ].join('');
   const wrap = document.createElement('div');
   wrap.className = 'kw-site-detail';
   wrap.dataset.detail = rule;
   wrap.innerHTML = `
-    ${usingDefaults ? '<p class="kw-site-using-default">Using global defaults — customize below.</p>' : ''}
+    ${usingDefaults ? `<p class="kw-site-using-default">${t('usingDefaults')}</p>` : ''}
     ${rows}
     <div class="kw-btn-row">
-      <button class="btn-ghost" data-reset-site>↺ Reset to defaults</button>
+      <button class="btn-ghost" data-reset-site>${t('resetSiteBtn')}</button>
     </div>`;
   return wrap;
 }
@@ -246,7 +251,7 @@ function renderSites() {
     if (wildcard) {
       const chip = document.createElement('span');
       chip.className = 'kw-chip';
-      chip.textContent = 'Subdomains';
+      chip.textContent = t('chipSubdomains');
       head.append(icon, name, chip);
     } else {
       head.append(icon, name);
@@ -254,7 +259,7 @@ function renderSites() {
 
     const customize = document.createElement('button');
     customize.className = 'btn-ghost';
-    customize.textContent = expandedSites.has(rule) ? 'Hide options ▲' : 'Customize ▼';
+    customize.textContent = expandedSites.has(rule) ? t('hideBtn') : t('customizeBtn');
     customize.addEventListener('click', () => {
       expandedSites.has(rule) ? expandedSites.delete(rule) : expandedSites.add(rule);
       renderSites();
@@ -262,18 +267,18 @@ function renderSites() {
 
     const label = document.createElement('label');
     label.className = 'kw-switch';
-    label.title = enabled ? 'Protection on' : 'Protection off';
+    label.title = enabled ? t('protectionOn') : t('protectionOff');
     const input = document.createElement('input');
     input.type = 'checkbox';
     input.checked = enabled;
-    input.setAttribute('aria-label', `Protect ${rule}`);
+    input.setAttribute('aria-label', t('protectAria', rule));
     input.addEventListener('change', async () => {
       await persist((s) => {
         if (!s.sites[rule]) s.sites[rule] = {};
         s.sites[rule].enabled = input.checked;
         return s;
       });
-      toast(input.checked ? `Protecting ${rule}` : `${rule} paused`);
+      toast(input.checked ? t('protecting', rule) : t('paused', rule));
       renderSites();
     });
     const track = document.createElement('span');
@@ -284,15 +289,15 @@ function renderSites() {
 
     const remove = document.createElement('button');
     remove.className = 'btn-ghost btn-danger';
-    remove.textContent = 'Remove';
-    remove.title = `Stop managing ${rule}`;
+    remove.textContent = t('removeBtn');
+    remove.title = t('removeTitle', rule);
     remove.addEventListener('click', async () => {
-      if (!confirm(`Remove ${rule} from Keurweb?`)) return;
+      if (!confirm(t('removeConfirm', rule))) return;
       await persist((s) => {
         delete s.sites[rule];
         return s;
       });
-      toast(`${rule} removed`);
+      toast(t('removed', rule));
       renderSites();
     });
 
@@ -321,9 +326,9 @@ function bindSiteDetailEvents() {
       });
       if (key === 'heartbeatIntervalSec') {
         const hint = input.closest('.kw-row')?.querySelector('[data-hint]');
-        if (hint) hint.textContent = `Every ${value}s`;
+        if (hint) hint.textContent = t('everySec', value);
       }
-      toast('Saved');
+      toast(t('saved'));
     });
   }
 
@@ -336,7 +341,7 @@ function bindSiteDetailEvents() {
         s.sites[rule] = { ...(enabled ? { enabled: true } : {}) };
         return s;
       });
-      toast(`${rule} reset to defaults`);
+      toast(t('resetToDefaults', rule));
       renderSites();
     });
   }
@@ -346,12 +351,12 @@ els.addForm.addEventListener('submit', async (event) => {
   event.preventDefault();
   const rule = normalizeSiteRule(els.addInput.value);
   if (!rule) {
-    els.addError.textContent = 'That doesn’t look like a website address. Try example.com or *.example.com';
+    els.addError.textContent = t('addErrorInvalid');
     els.addError.classList.add('error');
     return;
   }
   if (settings.sites[rule]) {
-    els.addError.textContent = `${rule} is already in your list.`;
+    els.addError.textContent = t('addErrorExists', rule);
     els.addError.classList.add('error');
     expandedSites.add(rule);
     renderSites();
@@ -365,7 +370,7 @@ els.addForm.addEventListener('submit', async (event) => {
   });
   els.addInput.value = '';
   expandedSites.add(rule);
-  toast(`Now protecting ${rule}`);
+  toast(t('nowProtecting', rule));
   renderSites();
 });
 
@@ -392,7 +397,8 @@ async function refreshLog() {
     lv.title = entry.level;
     lv.textContent = LEVEL_ICON[entry.level] ?? '●';
     const msg = document.createElement('span');
-    msg.textContent = entry.message;
+    // v1.1+ entries carry an i18n key; legacy entries keep prose.
+    msg.textContent = entry.message ?? (t(entry.key, ...entry.params) || entry.key);
     li.append(time, lv, msg);
     els.logList.append(li);
   }
@@ -403,11 +409,29 @@ els.clearLogBtn.addEventListener('click', async () => {
   refreshLog();
 });
 
+els.exportLogBtn.addEventListener('click', async () => {
+  const res = await chrome.runtime.sendMessage({ type: MSG.GET_LOG }).catch(() => null);
+  const log = Array.isArray(res?.log) ? res.log : [];
+  const payload = JSON.stringify(
+    { kind: 'keurweb-log', version: 1, exportedAt: new Date().toISOString(), log },
+    null,
+    2,
+  );
+  const blob = new Blob([payload], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `keurweb-log-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast(t('logExported'));
+});
+
 // --------------------------------------------------------------------- data
 
 els.exportBtn.addEventListener('click', async () => {
   const res = await chrome.runtime.sendMessage({ type: MSG.EXPORT_SETTINGS }).catch(() => null);
-  if (!res?.payload) return toast('Export failed');
+  if (!res?.payload) return toast(t('exportFailed'));
   const blob = new Blob([res.payload], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -415,7 +439,7 @@ els.exportBtn.addEventListener('click', async () => {
   a.download = `keurweb-settings-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  toast('Settings exported');
+  toast(t('exported'));
 });
 
 els.importBtn.addEventListener('click', () => els.importFile.click());
@@ -426,18 +450,18 @@ els.importFile.addEventListener('change', async () => {
   const payload = await file.text();
   const res = await chrome.runtime.sendMessage({ type: MSG.IMPORT_SETTINGS, payload }).catch(() => null);
   if (res?.error) {
-    toast(`Import failed: ${res.error}`);
+    toast(t('importFailed', res.error));
   } else {
-    toast('Settings imported');
+    toast(t('imported'));
     await hydrate();
   }
   els.importFile.value = '';
 });
 
 els.resetBtn.addEventListener('click', async () => {
-  if (!confirm('Reset ALL Keurweb settings and sites? This cannot be undone.')) return;
+  if (!confirm(t('resetConfirm'))) return;
   await chrome.runtime.sendMessage({ type: MSG.RESET_SETTINGS }).catch(() => {});
-  toast('Everything reset');
+  toast(t('everythingReset'));
   await hydrate();
 });
 
@@ -448,7 +472,7 @@ els.master.addEventListener('change', async () => {
     s.masterEnabled = els.master.checked;
     return s;
   });
-  toast(els.master.checked ? 'Keurweb is on' : 'Keurweb paused everywhere');
+  toast(els.master.checked ? t('masterOn') : t('masterPaused'));
 });
 
 // -------------------------------------------------------------------- boot
@@ -456,11 +480,12 @@ els.master.addEventListener('change', async () => {
 async function hydrate() {
   settings = await store.load();
   els.master.checked = settings.masterEnabled;
+  syncBehaviorControls();
   bindBehaviorControls();
   renderSites();
 }
 
-els.version.textContent = chrome.runtime.getManifest().version;
+els.version.textContent = t('aboutVersion', chrome.runtime.getManifest().version);
 
 const params = new URLSearchParams(location.search);
 const preselect = params.get('site');
