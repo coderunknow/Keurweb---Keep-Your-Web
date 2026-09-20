@@ -1,6 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
+  APP_VERSION,
   DEFAULT_SITE_BEHAVIOR,
   LIMITS,
   MSG,
@@ -12,6 +16,11 @@ import {
   defaultSettings,
   ALL_BEHAVIOR_KEYS,
 } from '../src/shared/constants.js';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'));
+const manifest = JSON.parse(readFileSync(resolve(root, 'src/manifest.json'), 'utf8'));
+const changelog = readFileSync(resolve(root, 'CHANGELOG.md'), 'utf8');
 
 test('normalizeSiteKey trims, lowercases and strips scheme/path', () => {
   assert.equal(normalizeSiteKey('https://App.Example.com/path?q=1'), 'app.example.com');
@@ -93,4 +102,12 @@ test('limits are sane', () => {
   assert.ok(LIMITS.heartbeatIntervalSec.min >= 10, 'heartbeat must not hammer servers');
   assert.ok(LIMITS.maxLogEntries > 0);
   assert.ok(LIMITS.maxManagedTabs > 0);
+});
+
+test('version fields are in sync across package.json, manifest.json, APP_VERSION and CHANGELOG.md', () => {
+  const newestChangelog = changelog.match(/^##\s*\[([0-9]+\.[0-9]+\.[0-9]+)\]/m)?.[1];
+  assert.ok(newestChangelog, 'CHANGELOG.md has a newest version heading');
+  assert.equal(pkg.version, APP_VERSION, 'package.json version === APP_VERSION');
+  assert.equal(manifest.version, APP_VERSION, 'manifest.json version === APP_VERSION');
+  assert.equal(newestChangelog, APP_VERSION, 'CHANGELOG.md newest heading === APP_VERSION');
 });

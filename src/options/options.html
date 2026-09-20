@@ -65,7 +65,7 @@
               <p class="kw-hint"><span id="g-heartbeatIntervalSec-val">Every 60s</span></p>
             </span>
             <span class="kw-inline-controls">
-              <input type="range" id="g-heartbeatIntervalSec" data-key="heartbeatIntervalSec" min="15" max="1800" step="15" value="60" />
+              <input type="range" id="g-heartbeatIntervalSec" data-key="heartbeatIntervalSec" min="15" max="3600" step="15" value="60" />
             </span>
           </div>
           <div class="kw-row">
@@ -140,6 +140,36 @@
             <span class="kw-switch">
               <input type="checkbox" id="g-notifyOnReload" data-key="notifyOnReload" />
               <span class="kw-track"></span><span class="kw-knob"></span>
+            </span>
+          </div>
+        </div>
+
+        <div class="kw-card">
+          <h3 class="kw-card-title" data-i18n="quietHours">💤 Quiet hours</h3>
+          <p class="kw-hint" data-i18n="quietHoursHint">Pause all protection during a daily time window. Manual refresh still works.</p>
+          <div class="kw-row">
+            <span class="kw-label" data-i18n="quietHoursEnable">Enable quiet hours</span>
+            <span class="kw-switch">
+              <input type="checkbox" id="g-quietHours-enabled" data-key="quietHours.enabled" />
+              <span class="kw-track"></span><span class="kw-knob"></span>
+            </span>
+          </div>
+          <div class="kw-row kw-quiet-row">
+            <span>
+              <span class="kw-label" data-i18n="quietHoursStart">From</span>
+              <p class="kw-hint" data-i18n="quietHoursHours">HH:MM (local time)</p>
+            </span>
+            <span class="kw-inline-controls">
+              <input type="time" id="g-quietHours-start" data-key="quietHours.start" value="22:00" />
+            </span>
+          </div>
+          <div class="kw-row kw-quiet-row">
+            <span>
+              <span class="kw-label" data-i18n="quietHoursEnd">To</span>
+              <p class="kw-hint" data-i18n="quietHoursHours">HH:MM (local time)</p>
+            </span>
+            <span class="kw-inline-controls">
+              <input type="time" id="g-quietHours-end" data-key="quietHours.end" value="07:00" />
             </span>
           </div>
         </div>

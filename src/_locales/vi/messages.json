@@ -12,6 +12,7 @@
   "badgeRecovering": { "message": "Keurweb: đang khôi phục tab này", "description": "Huy hiệu tab khi đang kết nối lại." },
   "badgeGlobalOff": { "message": "Keurweb: công tắc tổng đang tắt", "description": "Huy hiệu tab khi công tắc tổng tắt." },
   "badgeSiteOff": { "message": "Keurweb: chưa bật cho website này", "description": "Huy hiệu tab khi website chưa được bật." },
+  "badgeStandby": { "message": "Keurweb: đang nguỵ thay đổi (tạm dừng khôi phục)", "description": "Huy hiệu tab khi khôi phục đang trong thời gian chờ." },
 
   "notifyTitle": { "message": "Keurweb", "description": "Tiêu đề thông báo." },
   "notifyReconnect": {
@@ -139,6 +140,21 @@
   "importSettingsBtn": { "message": "⬆️ Nhập cài đặt", "description": "Chung: nút nhập." },
   "resetAllBtn": { "message": "🗑️ Đặt lại tất cả", "description": "Chung: nút đặt lại." },
 
+  "quietHours": { "message": "💤 Giờ tĩnh lặng", "description": "Chung: tiêu đề thẻ giờ tĩnh lặng." },
+  "quietHoursHint": {
+    "message": "Tạm dừng mọi bảo vệ trong một khung giờ hàng ngày. Làm mới thủ công vẫn hoạt động.",
+    "description": "Chung: chú thích thẻ giờ tĩnh lặng."
+  },
+  "quietHoursEnable": { "message": "Bật giờ tĩnh lặng", "description": "Chung: công tắc bật giờ tĩnh lặng." },
+  "quietHoursStart": { "message": "Từ", "description": "Chung: nhãn thời gian bắt đầu." },
+  "quietHoursEnd": { "message": "Đến", "description": "Chung: nhãn thời gian kết thúc." },
+  "quietHoursHours": { "message": "HH:MM (giờ địa phương)", "description": "Chung: chú thích định dạng thời gian." },
+  "quietNow": { "message": "Giờ tĩnh lặng", "description": "Popup: huy hiệu trạng thái giờ tĩnh lặng." },
+  "quietHoursActive": {
+    "message": "Đang tạm dừng bảo vệ — giờ tĩnh lặng đang hiệu lực. Dùng ⟳ Làm mới ngay để ping cũng được.",
+    "description": "Popup: dòng trạng thái trong giờ tĩnh lặng."
+  },
+
   "sitesTitle": { "message": "Website", "description": "Tiêu đề mục Website." },
   "sitesLead": {
     "message": "Keurweb chỉ bảo vệ các website bạn bật ở đây (hoặc qua popup / Alt+Shift+K).",
@@ -167,6 +183,8 @@
   "usingDefaults": { "message": "Đang dùng mặc định toàn cục — tùy chỉnh bên dưới.", "description": "Website: chú thích khi chưa có giá trị riêng." },
   "rowHeartbeat": { "message": "Nhịp tim phiên", "description": "Chi tiết website: dòng nhịp tim." },
   "rowHeartbeatHint": { "message": "Ping làm ấm để giữ phiên sống", "description": "Chi tiết website: chú thích nhịp tim." },
+  "rowMethod": { "message": "Phương thức yêu cầu", "description": "Chi tiết website: dòng chọn phương thức." },
+  "rowMethodHint": { "message": "HEAD nhẹ hơn; GET hoạt động trên nhiều máy chủ hơn.", "description": "Chi tiết website: chú thích phương thức." },
   "rowInterval": { "message": "Khoảng cách nhịp tim", "description": "Chi tiết website: dòng khoảng cách." },
   "rowActivity": { "message": "Chống nhàn rỗi", "description": "Chi tiết website: dòng chống nhàn rỗi." },
   "rowActivityHint": { "message": "Hoạt động người dùng mô phỏng", "description": "Chi tiết website: chú thích chống nhàn rỗi." },

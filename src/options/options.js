@@ -118,6 +118,11 @@ function syncBehaviorControls() {
     $(id).value = String(settings.recovery[key]);
     $(`${id}-val`).textContent = t(keyHint, settings.recovery[key]);
   }
+  // Quiet hours controls
+  const qh = settings.quietHours;
+  $('g-quietHours-enabled').checked = qh.enabled === true;
+  $('g-quietHours-start').value = qh.start;
+  $('g-quietHours-end').value = qh.end;
 }
 
 /** One-time wiring of the General form listeners. */
@@ -154,7 +159,30 @@ function bindBehaviorControls() {
       toast(t('saved'));
     });
   }
+
+  // Quiet hours controls
+  $('g-quietHours-enabled').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, enabled: $('g-quietHours-enabled').checked };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
+  $('g-quietHours-start').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, start: $('g-quietHours-start').value };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
+  $('g-quietHours-end').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, end: $('g-quietHours-end').value };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
 }
+
+const saveQuietHours = () =>
+  persist((s) => {
+    s.quietHours = settings.quietHours;
+    return s;
+  });
 
 /** Enables/disables dependent controls (e.g. interval when heartbeat off). */
 function reflectDependent(key) {
@@ -215,7 +243,10 @@ function buildSiteDetail(rule) {
     </div>`;
   const rows = [
     behaviorRow(t('rowHeartbeat'), t('rowHeartbeatHint'), switchHtml(b.heartbeat !== false, 'heartbeat')),
-    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="1800" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    // max comes from LIMITS.heartbeatIntervalSec.max (shared/constants.js);
+    // keep in sync — the bounds-drift test reads this HTML and asserts equality.
+    behaviorRow(t('rowInterval'), `<span data-hint="heartbeatIntervalSec">${t('everySec', interval)}</span>`, `<input type="range" min="${LIMITS.heartbeatIntervalSec.min}" max="${LIMITS.heartbeatIntervalSec.max}" step="15" value="${interval}" data-site-key="heartbeatIntervalSec">`),
+    behaviorRow(t('rowMethod'), t('rowMethodHint'), `<select data-site-key="heartbeatMethod"><option value="head" ${b.heartbeatMethod === 'head' ? 'selected' : ''}>${t('methodHead')}</option><option value="get" ${b.heartbeatMethod === 'get' ? 'selected' : ''}>${t('methodGet')}</option></select>`),
     behaviorRow(t('rowActivity'), t('rowActivityHint'), switchHtml(b.activity !== false, 'activity')),
     behaviorRow(t('rowAntiDiscard'), t('rowAntiDiscardHint'), switchHtml(b.antiDiscard !== false, 'antiDiscard')),
     behaviorRow(t('rowAutoReload'), t('rowAutoReloadHint'), switchHtml(b.autoReload !== false, 'autoReload')),
@@ -338,7 +369,10 @@ function bindSiteDetailEvents() {
     const key = input.dataset.siteKey;
     if (!rule || !key) continue;
     input.addEventListener('change', async () => {
-      const value = input.type === 'checkbox' ? input.checked : Number(input.value);
+      const value =
+        input.type === 'checkbox' ? input.checked
+          : input.type === 'select-one' ? input.value
+            : Number(input.value);
       await persist((s) => {
         if (!s.sites[rule]) s.sites[rule] = { enabled: true };
         s.sites[rule][key] = value;

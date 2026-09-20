@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defaultSettings } from '../src/shared/constants.js';
-import { badgeFor, canAttemptReload, findSiteRule, reloadDelaySec, resolveBehavior, shouldProtect } from '../src/shared/policy.js';
+import { badgeFor, canAttemptReload, findSiteRule, isQuietHours, reloadDelaySec, resolveBehavior, shouldProtect } from '../src/shared/policy.js';
 
 const src = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -133,14 +133,53 @@ test('badgeFor maps states to visuals', () => {
   assert.equal(badgeFor('recovering').text, 'RX');
   assert.equal(badgeFor('global-off').text, 'OFF');
   assert.equal(badgeFor('site-off').text, 'OFF');
+  assert.equal(badgeFor('standby').text, 'STBY');
+  assert.equal(badgeFor('standby').color, '#d97706', 'standby is amber');
   assert.equal(badgeFor('unknown').text, '');
 });
 
 test('badgeFor tooltips are i18n keys, not prose', () => {
   const en = JSON.parse(readFileSync(resolve(src, '_locales/en/messages.json'), 'utf8'));
-  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'unknown']) {
+  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'standby', 'unknown']) {
     const { titleKey } = badgeFor(state);
     assert.ok(titleKey in en, `titleKey ${titleKey} must exist in en messages`);
     assert.equal(badgeFor(state).title, undefined, 'no hardcoded tooltip prose');
   }
+});
+
+// ------------------------------------------------------- quiet hours
+
+const quietAt = (hh, mm) => new Date(2026, 0, 1, hh, mm, 0, 0).getTime(); // 2026-01-01 local
+
+test('isQuietHours returns false when disabled', () => {
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: false, start: '22:00', end: '07:00' }), false);
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: '00:00', end: '00:00' }), false, 'start===end → disabled');
+  assert.equal(isQuietHours(quietAt(12, 0), null), false);
+  assert.equal(isQuietHours(quietAt(12, 0), undefined), false);
+});
+
+test('isQuietHours handles same-day windows', () => {
+  // 09:00–17:00 window
+  assert.equal(isQuietHours(quietAt(8, 59), { enabled: true, start: '09:00', end: '17:00' }), false, 'just before window');
+  assert.equal(isQuietHours(quietAt(9, 0), { enabled: true, start: '09:00', end: '17:00' }), true, 'window start');
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: '09:00', end: '17:00' }), true, 'midday');
+  assert.equal(isQuietHours(quietAt(16, 59), { enabled: true, start: '09:00', end: '17:00' }), true, 'just before end');
+  assert.equal(isQuietHours(quietAt(17, 0), { enabled: true, start: '09:00', end: '17:00' }), false, 'window end (exclusive)');
+  assert.equal(isQuietHours(quietAt(18, 0), { enabled: true, start: '09:00', end: '17:00' }), false, 'after window');
+});
+
+test('isQuietHours handles overnight windows', () => {
+  // 22:00 → 07:00 overnight window
+  assert.equal(isQuietHours(quietAt(21, 59), { enabled: true, start: '22:00', end: '07:00' }), false, 'before overnight window');
+  assert.equal(isQuietHours(quietAt(22, 0), { enabled: true, start: '22:00', end: '07:00' }), true, 'overnight start');
+  assert.equal(isQuietHours(quietAt(0, 0), { enabled: true, start: '22:00', end: '07:00' }), true, 'midnight');
+  assert.equal(isQuietHours(quietAt(6, 59), { enabled: true, start: '22:00', end: '07:00' }), true, 'before morning');
+  assert.equal(isQuietHours(quietAt(7, 0), { enabled: true, start: '22:00', end: '07:00' }), false, 'overnight end (exclusive)');
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: '22:00', end: '07:00' }), false, 'daytime');
+});
+
+test('isQuietHours rejects malformed times', () => {
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: '22:00', end: '7:00' }), false, 'missing leading zero');
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: '22:60', end: '07:00' }), false, 'invalid minute');
+  assert.equal(isQuietHours(quietAt(12, 0), { enabled: true, start: 'foo', end: '07:00' }), false, 'non-numeric');
 });

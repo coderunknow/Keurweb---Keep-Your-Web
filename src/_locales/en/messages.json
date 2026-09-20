@@ -12,6 +12,7 @@
   "badgeRecovering": { "message": "Keurweb: recovering this tab", "description": "Tab badge tooltip while reconnecting." },
   "badgeGlobalOff": { "message": "Keurweb: master switch is off", "description": "Tab badge tooltip when the master switch is off." },
   "badgeSiteOff": { "message": "Keurweb: not enabled for this site", "description": "Tab badge tooltip when the site is not enabled." },
+  "badgeStandby": { "message": "Keurweb: cooling down (recovery paused)", "description": "Tab badge tooltip when recovery is in cooldown." },
 
   "notifyTitle": { "message": "Keurweb", "description": "Notification title." },
   "notifyReconnect": {
@@ -139,6 +140,21 @@
   "importSettingsBtn": { "message": "⬆️ Import settings", "description": "General: import button." },
   "resetAllBtn": { "message": "🗑️ Reset everything", "description": "General: reset button." },
 
+  "quietHours": { "message": "💤 Quiet hours", "description": "General: quiet hours card title." },
+  "quietHoursHint": {
+    "message": "Pause all protection during a daily time window. Manual refresh still works.",
+    "description": "General: quiet hours card hint."
+  },
+  "quietHoursEnable": { "message": "Enable quiet hours", "description": "General: quiet hours enable switch." },
+  "quietHoursStart": { "message": "From", "description": "General: quiet hours start time label." },
+  "quietHoursEnd": { "message": "To", "description": "General: quiet hours end time label." },
+  "quietHoursHours": { "message": "HH:MM (local time)", "description": "General: quiet hours time format hint." },
+  "quietNow": { "message": "Quiet hours", "description": "Popup: quiet hours status badge." },
+  "quietHoursActive": {
+    "message": "Protection paused — quiet hours in effect. Use ⟳ Refresh now to ping anyway.",
+    "description": "Popup: status line during quiet hours."
+  },
+
   "sitesTitle": { "message": "Sites", "description": "Sites view heading." },
   "sitesLead": {
     "message": "Keurweb protects only the sites you enable here (or via the popup / Alt+Shift+K).",
@@ -167,6 +183,8 @@
   "usingDefaults": { "message": "Using global defaults — customize below.", "description": "Sites: note when a site has no overrides." },
   "rowHeartbeat": { "message": "Session heartbeat", "description": "Site detail: heartbeat row." },
   "rowHeartbeatHint": { "message": "Warm-up ping to keep the session alive", "description": "Site detail: heartbeat hint." },
+  "rowMethod": { "message": "Request method", "description": "Site detail: method select row." },
+  "rowMethodHint": { "message": "HEAD is lighter; GET works on more servers.", "description": "Site detail: method hint." },
   "rowInterval": { "message": "Heartbeat interval", "description": "Site detail: interval row." },
   "rowActivity": { "message": "Anti-idle activity", "description": "Site detail: activity row." },
   "rowActivityHint": { "message": "Simulated user activity", "description": "Site detail: activity hint." },

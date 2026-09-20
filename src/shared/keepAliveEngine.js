@@ -6,10 +6,16 @@
  * (ticks, page activity, disconnect reports) and returns a list of intents
  * (actions the worker must perform). This keeps the heart of the product
  * deterministic and unit-testable.
+ *
+ * Activity quiet-gate: the engine only simulates anti-idle activity when
+ * the page has had no client activity for ACTIVITY_QUIET_MS (10 s).
+ * This is a fixed behavioral constant, not a user-facing knob — the old
+ * LIMITS.activityIntervalSec was validated but never consumed by any UI
+ * control, so it was replaced by this honestly-named constant.
  */
 
-import { LIMITS } from './constants.js';
-import { canAttemptReload, reloadDelaySec, resolveBehavior, shouldProtect } from './policy.js';
+import { ACTIVITY_QUIET_MS, LIMITS } from './constants.js';
+import { canAttemptReload, isQuietHours, reloadDelaySec, resolveBehavior, shouldProtect } from './policy.js';
 
 /** @typedef {'ping'|'simulate'|'sweep'|'reload'|'notify'|'badge'|'inject'} IntentKind */
 
@@ -204,6 +210,11 @@ export class KeepAliveEngine {
     if (!settings.masterEnabled) return intents;
     const t = this.now();
 
+    // Quiet hours: pause all automated protection activity.
+    if (isQuietHours(t, settings.quietHours)) {
+      return intents;
+    }
+
     for (const tab of this.tabs.values()) {
       const url = tab.url;
       if (!shouldProtect(settings, url)) continue;
@@ -227,7 +238,7 @@ export class KeepAliveEngine {
 
       // 2. Client activity simulation — only if the page has gone quiet.
       if (behavior.activity) {
-        const quietMs = LIMITS.activityIntervalSec.min * 1000;
+        const quietMs = ACTIVITY_QUIET_MS;
         if (t - tab.lastSimAt >= quietMs && t - tab.lastSeenAt >= quietMs) {
           tab.lastSimAt = t;
           intents.push({ kind: 'simulate', tabId: tab.tabId, host: tab.host });
@@ -269,6 +280,13 @@ export class KeepAliveEngine {
 
     const t = this.now();
 
+    // During quiet hours record the disconnect stat but schedule no reload.
+    if (isQuietHours(t, settings.quietHours)) {
+      const { rule } = resolveBehavior(settings, tab.host);
+      this.bumpStat(settings, rule, { lastDisconnectAt: t });
+      return [];
+    }
+
     // Reload-storm guard: after surrendering, stay quiet for a cooldown so a
     // prolonged outage cannot cycle "give up → error page → reload" forever.
     const surrenderedAt = this.surrendered.get(tabId);
@@ -286,7 +304,7 @@ export class KeepAliveEngine {
       this.push('error', 'logSurrendered', [tab.host, tabId]);
       tab.recovery = null;
       this.surrendered.set(tabId, t);
-      return [{ kind: 'badge', tabId, state: 'site-off' }];
+      return [{ kind: 'badge', tabId, state: 'standby' }];
     }
 
     tab.recovery.attempts += 1;
@@ -409,6 +427,7 @@ export class KeepAliveEngine {
       rule,
       viaWildcard,
       behavior,
+      quietNow: isQuietHours(t, settings.quietHours),
       stats: rule ? settings.stats?.[rule] ?? null : null,
       tracked: Boolean(tab),
       recovering: Boolean(tab?.recovery),

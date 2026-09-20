@@ -87,3 +87,34 @@ test("options: deep-link to a site card uses querySelector, not getElementById",
   assert.match(js, /querySelector\(`\[data-host-card=/);
   assert.doesNotMatch(js, /\$\(`\[data-host-card=/);
 });
+
+test('heartbeat interval bounds in all UIs match LIMITS.heartbeatIntervalSec', () => {
+  const LIMITS = (() => {
+    const src = read('shared/constants.js');
+    const block = src.match(/heartbeatIntervalSec:\s*\{[\s\S]*?\}/m);
+    assert.ok(block, 'LIMITS block found');
+    const min = block[0].match(/min:\s*(\d+)/);
+    const max = block[0].match(/max:\s*(\d+)/);
+    assert.ok(min && max, 'LIMITS bounds parseable');
+    return { min: Number(min[1]), max: Number(max[1]) };
+  })();
+
+  const popup = read('popup/popup.html');
+  const popupMatch = popup.match(/<input[^>]*id="interval"[^>]*min="(\d+)"[^>]*max="(\d+)"[^>]*step="(\d+)"/);
+  assert.ok(popupMatch, 'popup.html has the interval slider');
+  assert.equal(popupMatch[1], String(LIMITS.min), 'popup min matches LIMITS');
+  assert.equal(popupMatch[2], String(LIMITS.max), 'popup max matches LIMITS');
+  assert.equal(popupMatch[3], '5', 'popup step is 5');
+
+  const general = read('options/options.html');
+  const generalMatch = general.match(/<input[^>]*id="g-heartbeatIntervalSec"[^>]*min="(\d+)"[^>]*max="(\d+)"[^>]*step="(\d+)"/);
+  assert.ok(generalMatch, 'options.html has the general interval slider');
+  assert.equal(generalMatch[1], String(LIMITS.min), 'general min matches LIMITS');
+  assert.equal(generalMatch[2], String(LIMITS.max), 'general max matches LIMITS');
+  assert.equal(generalMatch[3], '15', 'general step is 15');
+
+  const perSite = read('options/options.js');
+  assert.ok(perSite.includes('LIMITS.heartbeatIntervalSec.max'), 'options.js per-site template interpolates LIMITS bounds');
+  assert.ok(perSite.includes('LIMITS.heartbeatIntervalSec.min'), 'options.js per-site template interpolates LIMITS min');
+  assert.ok(perSite.match(/step="15"/), 'per-site step is 15');
+});

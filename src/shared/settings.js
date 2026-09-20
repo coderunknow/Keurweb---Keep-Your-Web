@@ -128,6 +128,16 @@ export function normalizeSettings(raw) {
     };
   }
 
+  // Normalize quiet-hours config: enforce shape, clamp to valid HH:MM.
+  if (src.quietHours && typeof src.quietHours === 'object') {
+    const qh = src.quietHours;
+    settings.quietHours = {
+      enabled: qh.enabled === true,
+      start: typeof qh.start === 'string' && qh.start.match(/^\d{2}:\d{2}$/) ? qh.start : settings.quietHours.start,
+      end: typeof qh.end === 'string' && qh.end.match(/^\d{2}:\d{2}$/) ? qh.end : settings.quietHours.end,
+    };
+  }
+
   if (Array.isArray(src.log)) {
     settings.log = src.log
       .filter((e) => e && typeof e === 'object')
