@@ -109,6 +109,8 @@ export function badgeFor(state) {
       return { text: 'OFF', color: '#6b7280', titleKey: 'badgeGlobalOff' };
     case 'site-off':
       return { text: 'OFF', color: '#9ca3af', titleKey: 'badgeSiteOff' };
+    case 'standby':
+      return { text: 'STBY', color: '#d97706', titleKey: 'badgeStandby' };
     default:
       return { text: '', color: '#6b7280', titleKey: 'badgeDefault' };
   }

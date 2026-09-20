@@ -304,7 +304,7 @@ export class KeepAliveEngine {
       this.push('error', 'logSurrendered', [tab.host, tabId]);
       tab.recovery = null;
       this.surrendered.set(tabId, t);
-      return [{ kind: 'badge', tabId, state: 'site-off' }];
+      return [{ kind: 'badge', tabId, state: 'standby' }];
     }
 
     tab.recovery.attempts += 1;

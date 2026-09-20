@@ -12,6 +12,7 @@
   "badgeRecovering": { "message": "Keurweb: recovering this tab", "description": "Tab badge tooltip while reconnecting." },
   "badgeGlobalOff": { "message": "Keurweb: master switch is off", "description": "Tab badge tooltip when the master switch is off." },
   "badgeSiteOff": { "message": "Keurweb: not enabled for this site", "description": "Tab badge tooltip when the site is not enabled." },
+  "badgeStandby": { "message": "Keurweb: cooling down (recovery paused)", "description": "Tab badge tooltip when recovery is in cooldown." },
 
   "notifyTitle": { "message": "Keurweb", "description": "Notification title." },
   "notifyReconnect": {

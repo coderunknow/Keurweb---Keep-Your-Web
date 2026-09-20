@@ -12,6 +12,7 @@
   "badgeRecovering": { "message": "Keurweb: đang khôi phục tab này", "description": "Huy hiệu tab khi đang kết nối lại." },
   "badgeGlobalOff": { "message": "Keurweb: công tắc tổng đang tắt", "description": "Huy hiệu tab khi công tắc tổng tắt." },
   "badgeSiteOff": { "message": "Keurweb: chưa bật cho website này", "description": "Huy hiệu tab khi website chưa được bật." },
+  "badgeStandby": { "message": "Keurweb: đang nguỵ thay đổi (tạm dừng khôi phục)", "description": "Huy hiệu tab khi khôi phục đang trong thời gian chờ." },
 
   "notifyTitle": { "message": "Keurweb", "description": "Tiêu đề thông báo." },
   "notifyReconnect": {

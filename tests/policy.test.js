@@ -133,12 +133,14 @@ test('badgeFor maps states to visuals', () => {
   assert.equal(badgeFor('recovering').text, 'RX');
   assert.equal(badgeFor('global-off').text, 'OFF');
   assert.equal(badgeFor('site-off').text, 'OFF');
+  assert.equal(badgeFor('standby').text, 'STBY');
+  assert.equal(badgeFor('standby').color, '#d97706', 'standby is amber');
   assert.equal(badgeFor('unknown').text, '');
 });
 
 test('badgeFor tooltips are i18n keys, not prose', () => {
   const en = JSON.parse(readFileSync(resolve(src, '_locales/en/messages.json'), 'utf8'));
-  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'unknown']) {
+  for (const state of ['protected', 'recovering', 'global-off', 'site-off', 'standby', 'unknown']) {
     const { titleKey } = badgeFor(state);
     assert.ok(titleKey in en, `titleKey ${titleKey} must exist in en messages`);
     assert.equal(badgeFor(state).title, undefined, 'no hardcoded tooltip prose');
