@@ -6,9 +6,15 @@
  * (ticks, page activity, disconnect reports) and returns a list of intents
  * (actions the worker must perform). This keeps the heart of the product
  * deterministic and unit-testable.
+ *
+ * Activity quiet-gate: the engine only simulates anti-idle activity when
+ * the page has had no client activity for ACTIVITY_QUIET_MS (10 s).
+ * This is a fixed behavioral constant, not a user-facing knob — the old
+ * LIMITS.activityIntervalSec was validated but never consumed by any UI
+ * control, so it was replaced by this honestly-named constant.
  */
 
-import { LIMITS } from './constants.js';
+import { ACTIVITY_QUIET_MS, LIMITS } from './constants.js';
 import { canAttemptReload, reloadDelaySec, resolveBehavior, shouldProtect } from './policy.js';
 
 /** @typedef {'ping'|'simulate'|'sweep'|'reload'|'notify'|'badge'|'inject'} IntentKind */
@@ -227,7 +233,7 @@ export class KeepAliveEngine {
 
       // 2. Client activity simulation — only if the page has gone quiet.
       if (behavior.activity) {
-        const quietMs = LIMITS.activityIntervalSec.min * 1000;
+        const quietMs = ACTIVITY_QUIET_MS;
         if (t - tab.lastSimAt >= quietMs && t - tab.lastSeenAt >= quietMs) {
           tab.lastSimAt = t;
           intents.push({ kind: 'simulate', tabId: tab.tabId, host: tab.host });

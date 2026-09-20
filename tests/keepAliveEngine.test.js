@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { LIMITS, defaultSettings } from '../src/shared/constants.js';
+import { ACTIVITY_QUIET_MS, LIMITS, defaultSettings } from '../src/shared/constants.js';
 import { KeepAliveEngine } from '../src/shared/keepAliveEngine.js';
 
 /** Deterministic engine with a controllable clock. */
@@ -71,7 +71,7 @@ test('tick simulates activity only when the page is quiet', () => {
   engine.trackTab(1, 'https://app.example.com', s);
 
   engine.noteClientPing(1); // user just active
-  advance(LIMITS.activityIntervalSec.min * 1000 - 1_000);
+  advance(ACTIVITY_QUIET_MS - 1_000);
   let intents = engine.tick(s);
   assert.equal(intents.filter((i) => i.kind === 'simulate').length, 0, 'recent client activity → skip');
 

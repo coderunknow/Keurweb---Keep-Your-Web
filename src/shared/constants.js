@@ -47,10 +47,19 @@ export const LIMITS = Object.freeze({
   reloadMaxAttempts: { min: 1, max: 10 },
   reloadBackoffBaseSec: { min: 2, max: 60 },
   reloadBudgetMin: { min: 5, max: 240 },
-  activityIntervalSec: { min: 10, max: 600 },
   maxLogEntries: 500,
   maxManagedTabs: 500,
 });
+
+/**
+ * Quiet-gate threshold for activity simulation: the engine only simulates
+ * activity when the page has had no client activity for this long (ms).
+ * This is a fixed behavioral constant, not a user-facing knob — the old
+ * LIMITS.activityIntervalSec entry (min 10, max 600) was validated but
+ * never consumed by any UI control, so it is removed to avoid confusion.
+ * The 10s value is preserved as the quiet-gate semantics.
+ */
+export const ACTIVITY_QUIET_MS = 10_000;
 
 /**
  * Factory defaults for the whole configuration tree.
