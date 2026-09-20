@@ -113,3 +113,32 @@ export function badgeFor(state) {
       return { text: '', color: '#6b7280', titleKey: 'badgeDefault' };
   }
 }
+
+/**
+ * Whether the current time falls within the quiet-hours window.
+ * @param {number} nowMs  current epoch ms
+ * @param {{enabled: boolean, start: string, end: string}} qh  quiet-hours config
+ *   start/end are HH:MM in local time; overnight windows (e.g. 22:00→07:00) are valid;
+ *   start===end means disabled.
+ * @returns {boolean} true when protection is paused
+ */
+export function isQuietHours(nowMs, qh) {
+  if (!qh || !qh.enabled) return false;
+  if (qh.start === qh.end) return false; // disabled
+
+  const now = new Date(nowMs);
+  const startParts = qh.start.match(/^(\d{2}):(\d{2})$/);
+  const endParts = qh.end.match(/^(\d{2}):(\d{2})$/);
+  if (!startParts || !endParts) return false;
+
+  const startMs = startParts[1].concat(startParts[2]);
+  const endMs = endParts[1].concat(endParts[2]);
+  const nowMsOfDay = String(now.getHours()).padStart(2, '0').concat(String(now.getMinutes()).padStart(2, '0'));
+
+  // Overnight window: e.g. 22:00 → 07:00
+  if (startMs > endMs) {
+    return nowMsOfDay >= startMs || nowMsOfDay < endMs;
+  }
+  // Same-day window: e.g. 09:00 → 17:00
+  return nowMsOfDay >= startMs && nowMsOfDay < endMs;
+}

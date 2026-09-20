@@ -15,7 +15,7 @@
  */
 
 import { ACTIVITY_QUIET_MS, LIMITS } from './constants.js';
-import { canAttemptReload, reloadDelaySec, resolveBehavior, shouldProtect } from './policy.js';
+import { canAttemptReload, isQuietHours, reloadDelaySec, resolveBehavior, shouldProtect } from './policy.js';
 
 /** @typedef {'ping'|'simulate'|'sweep'|'reload'|'notify'|'badge'|'inject'} IntentKind */
 
@@ -210,6 +210,11 @@ export class KeepAliveEngine {
     if (!settings.masterEnabled) return intents;
     const t = this.now();
 
+    // Quiet hours: pause all automated protection activity.
+    if (isQuietHours(t, settings.quietHours)) {
+      return intents;
+    }
+
     for (const tab of this.tabs.values()) {
       const url = tab.url;
       if (!shouldProtect(settings, url)) continue;
@@ -274,6 +279,13 @@ export class KeepAliveEngine {
     if (!behavior.autoReload) return [];
 
     const t = this.now();
+
+    // During quiet hours record the disconnect stat but schedule no reload.
+    if (isQuietHours(t, settings.quietHours)) {
+      const { rule } = resolveBehavior(settings, tab.host);
+      this.bumpStat(settings, rule, { lastDisconnectAt: t });
+      return [];
+    }
 
     // Reload-storm guard: after surrendering, stay quiet for a cooldown so a
     // prolonged outage cannot cycle "give up → error page → reload" forever.
@@ -415,6 +427,7 @@ export class KeepAliveEngine {
       rule,
       viaWildcard,
       behavior,
+      quietNow: isQuietHours(t, settings.quietHours),
       stats: rule ? settings.stats?.[rule] ?? null : null,
       tracked: Boolean(tab),
       recovering: Boolean(tab?.recovery),

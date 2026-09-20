@@ -118,6 +118,11 @@ function syncBehaviorControls() {
     $(id).value = String(settings.recovery[key]);
     $(`${id}-val`).textContent = t(keyHint, settings.recovery[key]);
   }
+  // Quiet hours controls
+  const qh = settings.quietHours;
+  $('g-quietHours-enabled').checked = qh.enabled === true;
+  $('g-quietHours-start').value = qh.start;
+  $('g-quietHours-end').value = qh.end;
 }
 
 /** One-time wiring of the General form listeners. */
@@ -154,7 +159,30 @@ function bindBehaviorControls() {
       toast(t('saved'));
     });
   }
+
+  // Quiet hours controls
+  $('g-quietHours-enabled').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, enabled: $('g-quietHours-enabled').checked };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
+  $('g-quietHours-start').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, start: $('g-quietHours-start').value };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
+  $('g-quietHours-end').addEventListener('change', async () => {
+    settings.quietHours = { ...settings.quietHours, end: $('g-quietHours-end').value };
+    await saveQuietHours();
+    toast(t('saved'));
+  });
 }
+
+const saveQuietHours = () =>
+  persist((s) => {
+    s.quietHours = settings.quietHours;
+    return s;
+  });
 
 /** Enables/disables dependent controls (e.g. interval when heartbeat off). */
 function reflectDependent(key) {

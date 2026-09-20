@@ -83,6 +83,8 @@ export function defaultSettings() {
       backoffBaseSec: 5,
       budgetMin: 30,
     },
+    /** Daily quiet-hours window: protection is paused during this period. */
+    quietHours: { enabled: false, start: '22:00', end: '07:00' },
     /** Diagnostics log of keep-alive and recovery events. */
     log: [],
   };

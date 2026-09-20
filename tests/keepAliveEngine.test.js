@@ -369,3 +369,78 @@ test('describeSite exposes the matching rule\'s stats', () => {
   assert.equal(none.rule, null);
   assert.equal(none.stats, null, 'unmatched hosts report no stats');
 });
+
+// -------------------------------------------------------------------- quiet hours
+
+const quietAt = (hh, mm) => new Date(2026, 0, 1, hh, mm, 0, 0).getTime();
+
+test('tick emits no intents during quiet hours', () => {
+  const { engine, advance } = makeEngine();
+  const s = settingsWith();
+  s.quietHours = { enabled: true, start: '22:00', end: '07:00' };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+  advance(10_000); // past first-warmup threshold
+
+  // During quiet hours (00:00)
+  let intents = engine.tick(s);
+  assert.equal(intents.filter((i) => i.kind === 'ping').length, 0, 'no heartbeat during quiet hours');
+  assert.equal(intents.filter((i) => i.kind === 'simulate').length, 0, 'no activity during quiet hours');
+  assert.equal(intents.filter((i) => i.kind === 'sweep').length, 0, 'no sweep during quiet hours');
+  assert.equal(intents.filter((i) => i.kind === 'reload').length, 0, 'no recovery during quiet hours');
+});
+
+test('tick resumes normal operation when quiet hours end', () => {
+  const { engine, advance } = makeEngine();
+  const s = settingsWith();
+  s.quietHours = { enabled: true, start: '22:00', end: '07:00' };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  // Move to 07:01 (after quiet hours)
+  advance(quietAt(7, 1) - 1_700_000_000_000);
+  advance(10_000);
+  let intents = engine.tick(s);
+  assert.equal(intents.filter((i) => i.kind === 'ping').length, 1, 'heartbeat resumes after quiet hours');
+});
+
+test('reportDisconnect records stat but schedules no reload during quiet hours', () => {
+  const { engine, advance } = makeEngine();
+  const s = settingsWith();
+  s.quietHours = { enabled: true, start: '22:00', end: '07:00' };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  // During quiet hours
+  let intents = engine.reportDisconnect(1, s, { kind: 'network' });
+  assert.equal(intents.find((i) => i.kind === 'reload'), undefined, 'no reload scheduled during quiet hours');
+  assert.ok(s.stats['app.example.com'].lastDisconnectAt > 0, 'disconnect stat still recorded');
+  assert.equal(intents.length, 0, 'no intents at all');
+});
+
+test('pingNow still fires during quiet hours (explicit user action beats schedule)', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  s.quietHours = { enabled: true, start: '22:00', end: '07:00' };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  // During quiet hours — manual ping should still work
+  let intents = engine.pingNow(1, s, 'https://app.example.com/x');
+  assert.equal(intents.length, 1, 'manual ping works during quiet hours');
+  assert.equal(intents[0].kind, 'ping');
+  assert.equal(s.stats['app.example.com'].heartbeats, 1);
+});
+
+test('describeSite exposes quietNow', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  s.quietHours = { enabled: true, start: '22:00', end: '07:00' };
+  engine.trackTab(1, 'https://app.example.com/x', s);
+
+  // During quiet hours (00:00)
+  let snap = engine.describeSite(s, 'https://app.example.com/x');
+  assert.equal(snap.quietNow, true, 'quietNow true during quiet hours');
+
+  // Outside quiet hours (12:00)
+  const engine2 = new KeepAliveEngine({ now: () => quietAt(12, 0) });
+  engine2.trackTab(1, 'https://app.example.com/x', s);
+  snap = engine2.describeSite(s, 'https://app.example.com/x');
+  assert.equal(snap.quietNow, false, 'quietNow false outside quiet hours');
+});

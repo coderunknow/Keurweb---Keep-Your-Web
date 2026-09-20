@@ -139,6 +139,21 @@
   "importSettingsBtn": { "message": "⬆️ Nhập cài đặt", "description": "Chung: nút nhập." },
   "resetAllBtn": { "message": "🗑️ Đặt lại tất cả", "description": "Chung: nút đặt lại." },
 
+  "quietHours": { "message": "💤 Giờ tĩnh lặng", "description": "Chung: tiêu đề thẻ giờ tĩnh lặng." },
+  "quietHoursHint": {
+    "message": "Tạm dừng mọi bảo vệ trong một khung giờ hàng ngày. Làm mới thủ công vẫn hoạt động.",
+    "description": "Chung: chú thích thẻ giờ tĩnh lặng."
+  },
+  "quietHoursEnable": { "message": "Bật giờ tĩnh lặng", "description": "Chung: công tắc bật giờ tĩnh lặng." },
+  "quietHoursStart": { "message": "Từ", "description": "Chung: nhãn thời gian bắt đầu." },
+  "quietHoursEnd": { "message": "Đến", "description": "Chung: nhãn thời gian kết thúc." },
+  "quietHoursHours": { "message": "HH:MM (giờ địa phương)", "description": "Chung: chú thích định dạng thời gian." },
+  "quietNow": { "message": "Giờ tĩnh lặng", "description": "Popup: huy hiệu trạng thái giờ tĩnh lặng." },
+  "quietHoursActive": {
+    "message": "Đang tạm dừng bảo vệ — giờ tĩnh lặng đang hiệu lực. Dùng ⟳ Làm mới ngay để ping cũng được.",
+    "description": "Popup: dòng trạng thái trong giờ tĩnh lặng."
+  },
+
   "sitesTitle": { "message": "Website", "description": "Tiêu đề mục Website." },
   "sitesLead": {
     "message": "Keurweb chỉ bảo vệ các website bạn bật ở đây (hoặc qua popup / Alt+Shift+K).",

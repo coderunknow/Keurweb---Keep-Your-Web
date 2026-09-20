@@ -110,6 +110,9 @@ function render() {
   if (recovering) {
     setBadge('err', t('statusReconnecting'));
     els.statusLine.textContent = t('statusReconnectingLine');
+  } else if (snap.quietNow) {
+    setBadge('warn', t('quietNow'));
+    els.statusLine.textContent = t('quietHoursActive');
   } else if (!snap.masterEnabled) {
     setBadge('warn', t('statusMasterOff'));
     els.statusLine.textContent = t('statusMasterOffLine');

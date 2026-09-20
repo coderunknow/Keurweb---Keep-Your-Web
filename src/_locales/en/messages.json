@@ -139,6 +139,21 @@
   "importSettingsBtn": { "message": "⬆️ Import settings", "description": "General: import button." },
   "resetAllBtn": { "message": "🗑️ Reset everything", "description": "General: reset button." },
 
+  "quietHours": { "message": "💤 Quiet hours", "description": "General: quiet hours card title." },
+  "quietHoursHint": {
+    "message": "Pause all protection during a daily time window. Manual refresh still works.",
+    "description": "General: quiet hours card hint."
+  },
+  "quietHoursEnable": { "message": "Enable quiet hours", "description": "General: quiet hours enable switch." },
+  "quietHoursStart": { "message": "From", "description": "General: quiet hours start time label." },
+  "quietHoursEnd": { "message": "To", "description": "General: quiet hours end time label." },
+  "quietHoursHours": { "message": "HH:MM (local time)", "description": "General: quiet hours time format hint." },
+  "quietNow": { "message": "Quiet hours", "description": "Popup: quiet hours status badge." },
+  "quietHoursActive": {
+    "message": "Protection paused — quiet hours in effect. Use ⟳ Refresh now to ping anyway.",
+    "description": "Popup: status line during quiet hours."
+  },
+
   "sitesTitle": { "message": "Sites", "description": "Sites view heading." },
   "sitesLead": {
     "message": "Keurweb protects only the sites you enable here (or via the popup / Alt+Shift+K).",
