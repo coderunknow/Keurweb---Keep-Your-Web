@@ -360,19 +360,21 @@ export class KeepAliveEngine {
     const tab = this.tabs.get(tabId);
     let host = '';
     let targetUrl = '';
-    if (tab && shouldProtect(settings, tab.url)) {
-      host = tab.host;
-      targetUrl = tab.url;
-    } else if (url && shouldProtect(settings, url)) {
+    // The caller's URL (the popup's active tab) is authoritative; fall back
+    // to the tracked record only when no URL was provided.
+    if (url && shouldProtect(settings, url)) {
       try {
         host = new URL(url).hostname.toLowerCase();
         targetUrl = url;
       } catch {
-        return [];
+        host = '';
       }
-    } else {
-      return [];
     }
+    if (!targetUrl && tab && shouldProtect(settings, tab.url)) {
+      host = tab.host;
+      targetUrl = tab.url;
+    }
+    if (!targetUrl) return [];
     const t = this.now();
     if (tab && tab.url === targetUrl) tab.lastHeartbeatAt = t;
     const { rule, behavior } = resolveBehavior(settings, host);

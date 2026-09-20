@@ -340,6 +340,19 @@ test('pingNow counts a manual heartbeat for tracked and untracked protected tabs
   assert.equal(s.stats['app.example.com'].heartbeats, 2);
 });
 
+test('pingNow prefers the provided URL over a stale tracked record', () => {
+  const { engine } = makeEngine();
+  const s = settingsWith();
+  s.sites['other.example.com'] = { enabled: true };
+  engine.trackTab(5, 'https://app.example.com/x', s);
+
+  const intents = engine.pingNow(5, s, 'https://other.example.com/z');
+  assert.equal(intents.length, 1);
+  assert.equal(intents[0].url, 'https://other.example.com/z', 'popup URL is authoritative');
+  assert.equal(s.stats['other.example.com'].heartbeats, 1, 'stat goes to the pinged rule');
+  assert.equal(s.stats['app.example.com']?.heartbeats ?? 0, 0);
+});
+
 test('describeSite exposes the matching rule\'s stats', () => {
   const { engine, advance } = makeEngine();
   const s = defaultSettings();
