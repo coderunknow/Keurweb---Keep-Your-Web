@@ -25,7 +25,7 @@ Long-running web apps — dashboards, ERP/CRM systems, webmail, trading or monit
 4. Click **Load unpacked** and select the repository's `src/` folder.
 5. Pin **Keurweb** to the toolbar.
 
-Or use the packaged build: `npm run package` → load `dist/keurweb-v1.0.0.zip` unpacked after extracting.
+Or use the packaged build: `npm run package` → load `dist/keurweb-v1.1.0.zip` unpacked after extracting.
 
 > **Note on the popup:** Keurweb only touches http(s) pages you explicitly enable. Open any site, click the Keurweb icon, and press **“Keep this site alive.”**
 
@@ -36,14 +36,19 @@ Or use the packaged build: `npm run package` → load `dist/keurweb-v1.0.0.zip` 
 - **Master switch** (top-right) — turn Keurweb on/off everywhere at once.
 - **Keep this site alive** — enable/disable protection for the current site.
 - When a site is protected you get: live status (*Protected / Reconnecting… / Not protected*), a countdown to the next heartbeat, an interval slider, auto-reconnect toggles, and a **⟳ Refresh now** button that pings immediately.
-- **Site settings →** jumps to the full dashboard, pre-selected on that site.
+- **Stats line** — heartbeats sent, reconnects performed, and when the last ping went out.
+- **Site settings →** jumps to the full dashboard, pre-selected on that site (including wildcard rules).
 
 ### Options dashboard (toolbar icon → Settings)
 
 - **General** — global defaults: heartbeat (interval 15s–1h, HEAD/GET), activity simulation (events/focus/both), anti-discard sweep, auto-reconnect (attempts, backoff, budget, notifications), plus **Export / Import / Reset**.
-- **Sites** — your allowlist. Add `example.com`, toggle per site, and **Customize** any site to override every default. Remove anytime.
-- **Activity log** — a live, local diagnostics feed (keeps 500 entries).
-- **About** — version, features, shortcut help.
+- **Sites** — your allowlist. Add `example.com` (exact) or `*.example.com` (whole family: apex + every subdomain), toggle per site, and **Customize** any site to override every default — including live stats (heartbeats, reconnects, last disconnect/recovery). An exact rule always beats a wildcard, so you can pause a single site under an enabled wildcard without touching the rest. Remove anytime.
+- **Activity log** — a live, local diagnostics feed (keeps 500 entries), with **Export (JSON)**.
+- **About** — version, features, shortcut help, available languages.
+
+### Languages
+
+The UI is available in **English** and **Tiếng Việt** and follows your browser language automatically (`chrome.i18n`).
 
 ### Keyboard shortcut
 
@@ -64,7 +69,7 @@ Or use the packaged build: `npm run package` → load `dist/keurweb-v1.0.0.zip` 
  chrome.tabs.reload with exponential backoff
 ```
 
-- **Heartbeats** use `fetch(url, {method:'HEAD', credentials:'include', mode:'no-cors'})` from the worker — cookies flow, your session stays warm, and no page data is read.
+- **Heartbeats** use `fetch(url, {method:'HEAD' or 'GET', credentials:'include', mode:'no-cors'})` from the worker (method configurable per site) — cookies flow, your session stays warm, and no page data is read.
 - **Activity simulation** dispatches untrusted, benign DOM events (`mousemove`, `keydown`, `focus`, …) inside the page. It never reads or modifies page content.
 - **Recovery** reloads a dead tab after 5s, 10s, 20s… (doubling, capped at 5 min), up to N attempts within a rolling budget — then gives up cleanly and tells you in the log.
 

@@ -3,7 +3,7 @@
   "name": "__MSG_appName__",
   "short_name": "Keurweb",
   "default_locale": "en",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "__MSG_appDescription__",
   "author": "coderunknow",
   "homepage_url": "https://github.com/coderunknow/Keurweb---Keep-Your-Web",

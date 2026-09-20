@@ -8,7 +8,7 @@
 export const APP_NAME = 'Keurweb';
 
 /** Current version reported by the About panel (kept in sync with manifest). */
-export const APP_VERSION = '1.0.0';
+export const APP_VERSION = '1.1.0';
 
 /** Message action names used between popup/options/content and the worker. */
 export const MSG = Object.freeze({
